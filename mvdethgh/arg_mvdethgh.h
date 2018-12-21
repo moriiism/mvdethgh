@@ -10,6 +10,7 @@ public:
         progname_(""),
         datalist_(""),
         img_info_dat_(""),
+        par_dat_(""),
         outdir_(""),
         outfile_head_("") {}
     ~ArgValMvdethgh(){
@@ -21,6 +22,7 @@ public:
     string GetProgname() const {return progname_;};
     string GetDatalist() const {return datalist_;};
     string GetImgInfoDat() const {return img_info_dat_;};
+    string GetParDat() const {return par_dat_;};
     string GetOutdir() const {return outdir_;};
     string GetOutfileHead() const {return outfile_head_;};
 
@@ -28,6 +30,7 @@ private:
     string progname_;
     string datalist_;
     string img_info_dat_;
+    string par_dat_;
     string outdir_;
     string outfile_head_;
 

@@ -1,8 +1,8 @@
-include ../mitool/Makefile.in
-include ../mitool/milib/Makefile.in
-include ../mitool/miblaslib/Makefile.in
-include ../mitool/mifitslib/Makefile.in
-include ../mitool/mirootlib/Makefile.in
+include ../../mitool/Makefile.in
+include ../../mitool/milib/Makefile.in
+include ../../mitool/miblaslib/Makefile.in
+include ../../mitool/mifitslib/Makefile.in
+include ../../mitool/mirootlib/Makefile.in
 
 INCLUDE = $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MIBLASLIB_INC) $(MILIB_INC) $(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
 LDLIBS  = $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MIBLASLIB_LIB) $(MILIB_LIB) $(CFITSIO_LIB) \

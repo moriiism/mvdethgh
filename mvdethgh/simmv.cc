@@ -53,9 +53,9 @@ int main(int argc, char* argv[])
     for(int iimg = 0; iimg < nimg; iimg ++){
 
         double xvel = 1.0;
-        double yvel = 2.0;
-        double xpos_st = 5.0;
-        double ypos_st = 5.0;
+        double yvel = -0.5;
+        double xpos_st = 20.0;
+        double ypos_st = 20.0;
         double xpos = xpos_st + xvel * iimg;
         double ypos = ypos_st + yvel * iimg;
 

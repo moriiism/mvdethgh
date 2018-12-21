@@ -18,7 +18,7 @@ void ArgValMvdethgh::Init(int argc, char* argv[])
     SetOption(argc, argv, long_options);
     
     printf("ArgVal::Init: # of arg = %d\n", argc - optind);
-    int narg = 4;
+    int narg = 5;
     if (argc - optind != narg){
         printf("# of arguments must be %d.\n", narg);
         Usage(stdout);
@@ -26,6 +26,7 @@ void ArgValMvdethgh::Init(int argc, char* argv[])
     int iarg = optind;
     datalist_       = argv[iarg]; iarg++;
     img_info_dat_   = argv[iarg]; iarg++;
+    par_dat_        = argv[iarg]; iarg++;
     outdir_         = argv[iarg]; iarg++;
     outfile_head_   = argv[iarg]; iarg++;
 }
@@ -39,6 +40,7 @@ void ArgValMvdethgh::Print(FILE* fp) const
     fprintf(fp, "%s: progname_       : %s\n", __func__, progname_.c_str());
     fprintf(fp, "%s: datalist_       : %s\n", __func__, datalist_.c_str());
     fprintf(fp, "%s: img_info_dat_   : %s\n", __func__, img_info_dat_.c_str());
+    fprintf(fp, "%s: par_dat_        : %s\n", __func__, par_dat_.c_str());
     fprintf(fp, "%s: outdir_         : %s\n", __func__, outdir_.c_str());
     fprintf(fp, "%s: outfile_head_   : %s\n", __func__, outfile_head_.c_str());
 }
@@ -47,10 +49,11 @@ void ArgValMvdethgh::Print(FILE* fp) const
 
 void ArgValMvdethgh::Null()
 {
-    progname_ = "";
-    datalist_ = "";
+    progname_     = "";
+    datalist_     = "";
     img_info_dat_ = "";
-    outdir_   = "";
+    par_dat_      = "";
+    outdir_       = "";
     outfile_head_ = "";
 }
 
@@ -108,7 +111,7 @@ void ArgValMvdethgh::Usage(FILE* fp) const
 {
     fprintf(fp,
             "usage: %s [--help (0)] [--verbose (0)] [--debug (0)] "
-            "datalist  img_info_dat  outdir  outfile_head  \n",
+            "datalist  img_info_dat  par_dat  outdir  outfile_head  \n",
             progname_.c_str());
     abort();
 }
