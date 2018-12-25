@@ -1,4 +1,5 @@
 #include "mir_math.h"
+#include "mir_data1d_ope.h"
 #include "mir_hist_info.h"
 #include "mi_str.h"
 #include "mif_fits.h"
@@ -98,6 +99,25 @@ int main(int argc, char* argv[])
     printf("=== Output subcube ===\n");
 
 
+    printf("--- statistic of input data_arr ---\n");
+    DataArray1d** da1d_arr = new DataArray1d* [ntime];
+    for(long itime = 0; itime < ntime; itime ++){
+        da1d_arr[itime] = new DataArrayNerr1d;
+        da1d_arr[itime]->Init(img_info_rec->GetNpixelImg());
+        da1d_arr[itime]->SetVal(img_info_rec->GetNpixelImg(), data_arr[itime]);
+    }
+    DataArrayNerr1d* da1d_amean = new DataArrayNerr1d;
+    DataArray1dOpe::GetAMean(da1d_arr, ntime, da1d_amean);
+    DataArrayNerr1d* da1d_stddev = new DataArrayNerr1d;
+    DataArray1dOpe::GetSqrtOfUnbiasedVariance(da1d_arr, ntime, da1d_stddev);
+    
+    printf("=== statistic of input data_arr ===\n");
+
+
+
+
+
+    
     HistInfo1d* hi1d_rho   = new HistInfo1d;
     HistInfo1d* hi1d_phi   = new HistInfo1d;
     HistInfo1d* hi1d_theta = new HistInfo1d;
@@ -153,14 +173,24 @@ int main(int argc, char* argv[])
         hough_max_theta_arr[itheta] = 0.0;
         hough_max_index_arr[itheta] = 0;
     }
+    double* cube_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+        cube_arr[iarr] = 0.0;
+    }
+    double* flat_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+        flat_arr[iarr] = 0.0;
+    }
+    double* rec_arr = new double [img_info_rec->GetNpixelTotal()];
+    for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
+        rec_arr[iarr] = 0.0;
+    }
     for(long itheta = 0; itheta < nbin_theta; itheta ++){
-        double theta_rad = (theta_lo + delta_theta * itheta) / 180.0 * M_PI ;
-
-        double* cube_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+        double theta_rad = (theta_lo + delta_theta * (itheta + 0.5) ) / 180.0 * M_PI ;
         for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
             cube_arr[iarr] = 0.0;
+            flat_arr[iarr] = 0.0;
         }
-        double* rec_arr = new double [img_info_rec->GetNpixelTotal()];
         for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
             rec_arr[iarr] = 0.0;
         }
@@ -171,12 +201,12 @@ int main(int argc, char* argv[])
                     double yval = 1.0 * (iposy + 0.5);
                     double zval = time_arr[itime];
 
-                    if(data_arr[itime][iposx + iposy * nposx] < 15){
+                    if(data_arr[itime][iposx + iposy * nposx] < 1000){
                         continue;
                     }
 
                     for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
-                        double psi_rad = (psi_lo + delta_psi * ipsi) / 180. * M_PI;
+                        double psi_rad = (psi_lo + delta_psi * (ipsi + 0.5) ) / 180. * M_PI;
                         double rho_cos_phi = xval * cos(psi_rad) + yval * sin(psi_rad);
                         double rho_sin_phi = -1 * xval * sin(psi_rad) * cos(theta_rad)
                             + yval * cos(psi_rad) * cos(theta_rad)
@@ -186,7 +216,7 @@ int main(int argc, char* argv[])
                         if(rho_sin_phi >= 0.0){
                             phi_rad = acos(rho_cos_phi / rho);
                         } else {
-                            phi_rad = acos(rho_cos_phi / rho) + M_PI;
+                            phi_rad = -1 * acos(rho_cos_phi / rho) + 2 * M_PI;
                         }
                         long irho = (long) floor( rho / delta_rho );
                         long iphi = (long) floor( phi_rad / M_PI * 180.0 / delta_phi );
@@ -197,14 +227,15 @@ int main(int argc, char* argv[])
                             printf("!!!! iphi = %ld phi(deg) = %e\n", iphi, phi_rad/M_PI * 180.);
                         }
                         long i_rho_phi_psi = irho + iphi * nbin_rho + ipsi * (nbin_rho * nbin_phi);
-                        if(data_arr[itime][iposx + iposy * nposx] >= 15){
-                            cube_arr[i_rho_phi_psi] += 1;
+                        if(data_arr[itime][iposx + iposy * nposx] >= 1000){
+                            cube_arr[i_rho_phi_psi] += 1.0;
                         }
                         // cube_arr[i_rho_phi_psi] += data_arr[itime][iposx + iposy * nposx];
                     }
                 }
             }
         }
+
         char tag[kLineSize];
         sprintf(tag, "theta_%2.2ld", itheta);
         int naxis = 2;
@@ -212,7 +243,12 @@ int main(int argc, char* argv[])
                               3, bitpix,
                               img_info_cube->GetNaxesArr(),
                               cube_arr);
-
+        sprintf(tag, "theta_flat_%2.2ld", itheta);
+        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                              3, bitpix,
+                              img_info_cube->GetNaxesArr(),
+                              flat_arr);
+        
         double hough_max = 0.0;
         for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
             if(cube_arr[iarr] > hough_max){
@@ -227,9 +263,9 @@ int main(int argc, char* argv[])
         long iphi = index2 / nbin_rho;
         long irho = index2 % nbin_rho;
 
-        double rho     = rho_lo + irho * delta_rho;
-        double phi_deg = phi_lo + iphi * delta_phi;
-        double psi_deg = psi_lo + ipsi * delta_psi;
+        double rho     = rho_lo + (irho + 0.5) * delta_rho;
+        double phi_deg = phi_lo + (iphi + 0.5) * delta_phi;
+        double psi_deg = psi_lo + (ipsi + 0.5) * delta_psi;
         double phi_rad = phi_deg / 180.0 * M_PI;
         double psi_rad = psi_deg / 180.0 * M_PI;
 
@@ -259,7 +295,13 @@ int main(int argc, char* argv[])
             long iposz = (long) zval;
             long index = iposx + iposy * nposx + iposz * (nposx * nposy);
 
-            printf("xval, yval, zval = %f, %f, %f\n", xval, yval, zval);
+            double val11 = cos(psi_rad) * cos(phi_rad);
+            double val12 = - sin(psi_rad) * cos(theta_rad) * sin(phi_rad);
+            double val2 = sin(psi_rad) * sin(theta_rad);
+
+            
+            printf("val11, val12, val2 %f, %f, %f, tpar = %f, xval, yval, zval = %f, %f, %f\n",
+                   val11, val12, val2, tpar, xval, yval, zval);
             
             if(iposx < 0 || nposx - 1 < iposx){
                 continue;
@@ -288,63 +330,63 @@ int main(int argc, char* argv[])
     fclose(fp_out);
 
 
-    {
-        // fake
-
-        // theta = 4.600000e+01, rho = 8.485281e+01, phi_deg = 2.916000e+02, psi_deg = 1.620000e+02 
-
-        double rho_fake = 100;
-        double phi_deg_fake = 275.0;
-        double theta_deg_fake = 45.0;
-        double psi_deg_fake = 180.0;
-        double phi_rad_fake = phi_deg_fake / 180. * M_PI;
-        double theta_rad_fake = theta_deg_fake / 180. * M_PI;
-        double psi_rad_fake = psi_deg_fake / 180. * M_PI;
-    
-        double* fake_arr = new double [img_info_rec->GetNpixelTotal()];
-        for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
-            fake_arr[iarr] = 0.0;
-        }
-        double zval_lo = time_arr[0];
-        double zval_up = time_arr[ntime - 1];
-        double tpar_lo = ( zval_lo - rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake) )
-            / cos(theta_rad_fake );
-        double tpar_up = ( zval_up - rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake) )
-            / cos(theta_rad_fake );
-        long ntpar = 100;
-        double delta_tpar = (tpar_up - tpar_lo) / ntpar;
-        for(long itpar = 0; itpar < ntpar; itpar ++){
-            double tpar = tpar_lo + itpar * delta_tpar;
-            double xval = rho_fake * (cos(psi_rad_fake) * cos(phi_rad_fake)
-                                      - sin(psi_rad_fake) * cos(theta_rad_fake) * sin(phi_rad_fake) )
-                + tpar * sin(psi_rad_fake) * sin(theta_rad_fake);
-            double yval = rho_fake * (sin(psi_rad_fake) * cos(phi_rad_fake)
-                                      + cos(psi_rad_fake) * cos(theta_rad_fake) * sin(phi_rad_fake) )
-                - tpar * cos(psi_rad_fake) * sin(theta_rad_fake);
-            double zval = rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake)
-                + tpar * cos(theta_rad_fake);
-            long iposx = (long) xval;
-            long iposy = (long) yval;
-            long iposz = (long) zval;
-            long index = iposx + iposy * nposx + iposz * (nposx * nposy);
-            if(iposx < 0 || nposx - 1 < iposx){
-                continue;
-            }
-            if(iposy < 0 || nposy - 1 < iposy){
-                continue;
-            }
-            if(iposz < 0 || nposz - 1 < iposz){
-                continue;
-            }
-            fake_arr[index] = 1.0;
-        }
-        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), "fake",
-                              3, bitpix,
-                              img_info_rec->GetNaxesArr(),
-                              fake_arr);
-    }    
-
-
+//    {
+//        // fake
+//
+//        // theta = 4.600000e+01, rho = 8.485281e+01, phi_deg = 2.916000e+02, psi_deg = 1.620000e+02 
+//
+//        double rho_fake = 100;
+//        double phi_deg_fake = 275.0;
+//        double theta_deg_fake = 45.0;
+//        double psi_deg_fake = 180.0;
+//        double phi_rad_fake = phi_deg_fake / 180. * M_PI;
+//        double theta_rad_fake = theta_deg_fake / 180. * M_PI;
+//        double psi_rad_fake = psi_deg_fake / 180. * M_PI;
+//    
+//        double* fake_arr = new double [img_info_rec->GetNpixelTotal()];
+//        for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
+//            fake_arr[iarr] = 0.0;
+//        }
+//        double zval_lo = time_arr[0];
+//        double zval_up = time_arr[ntime - 1];
+//        double tpar_lo = ( zval_lo - rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake) )
+//            / cos(theta_rad_fake );
+//        double tpar_up = ( zval_up - rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake) )
+//            / cos(theta_rad_fake );
+//        long ntpar = 100;
+//        double delta_tpar = (tpar_up - tpar_lo) / ntpar;
+//        for(long itpar = 0; itpar < ntpar; itpar ++){
+//            double tpar = tpar_lo + itpar * delta_tpar;
+//            double xval = rho_fake * (cos(psi_rad_fake) * cos(phi_rad_fake)
+//                                      - sin(psi_rad_fake) * cos(theta_rad_fake) * sin(phi_rad_fake) )
+//                + tpar * sin(psi_rad_fake) * sin(theta_rad_fake);
+//            double yval = rho_fake * (sin(psi_rad_fake) * cos(phi_rad_fake)
+//                                      + cos(psi_rad_fake) * cos(theta_rad_fake) * sin(phi_rad_fake) )
+//                - tpar * cos(psi_rad_fake) * sin(theta_rad_fake);
+//            double zval = rho_fake * sin(theta_rad_fake) * sin(phi_rad_fake)
+//                + tpar * cos(theta_rad_fake);
+//            long iposx = (long) xval;
+//            long iposy = (long) yval;
+//            long iposz = (long) zval;
+//            long index = iposx + iposy * nposx + iposz * (nposx * nposy);
+//            if(iposx < 0 || nposx - 1 < iposx){
+//                continue;
+//            }
+//            if(iposy < 0 || nposy - 1 < iposy){
+//                continue;
+//            }
+//            if(iposz < 0 || nposz - 1 < iposz){
+//                continue;
+//            }
+//            fake_arr[index] = 1.0;
+//        }
+//        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), "fake",
+//                              3, bitpix,
+//                              img_info_rec->GetNaxesArr(),
+//                              fake_arr);
+//    }    
+//
+//
 
 
 
