@@ -168,6 +168,9 @@ int main(int argc, char* argv[])
                                img_info_in->GetNaxesArr(),
                                sim_arr[iimg]);
     }
+
+    double time_ed = MiTime::GetTimeSec();
+    printf("time_ed - time_st = %e\n", time_ed - time_st);
     
     return status_prog;
 }

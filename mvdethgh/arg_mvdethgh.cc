@@ -18,15 +18,18 @@ void ArgValMvdethgh::Init(int argc, char* argv[])
     SetOption(argc, argv, long_options);
     
     printf("ArgVal::Init: # of arg = %d\n", argc - optind);
-    int narg = 5;
+    int narg = 8;
     if (argc - optind != narg){
         printf("# of arguments must be %d.\n", narg);
         Usage(stdout);
     }
     int iarg = optind;
-    datalist_       = argv[iarg]; iarg++;
-    img_info_dat_   = argv[iarg]; iarg++;
-    par_dat_        = argv[iarg]; iarg++;
+    data_list_      = argv[iarg]; iarg++;
+    subimg_dat_     = argv[iarg]; iarg++;
+    time_dat_       = argv[iarg]; iarg++;
+    vel_dat_        = argv[iarg]; iarg++;
+    res_dat_        = argv[iarg]; iarg++;
+    sig_            = atof(argv[iarg]); iarg++;
     outdir_         = argv[iarg]; iarg++;
     outfile_head_   = argv[iarg]; iarg++;
 }
@@ -38,9 +41,12 @@ void ArgValMvdethgh::Print(FILE* fp) const
     fprintf(fp, "%s: g_flag_verbose : %d\n", __func__, g_flag_verbose);
 
     fprintf(fp, "%s: progname_       : %s\n", __func__, progname_.c_str());
-    fprintf(fp, "%s: datalist_       : %s\n", __func__, datalist_.c_str());
-    fprintf(fp, "%s: img_info_dat_   : %s\n", __func__, img_info_dat_.c_str());
-    fprintf(fp, "%s: par_dat_        : %s\n", __func__, par_dat_.c_str());
+    fprintf(fp, "%s: data_list_      : %s\n", __func__, data_list_.c_str());
+    fprintf(fp, "%s: subimg_dat_     : %s\n", __func__, subimg_dat_.c_str());
+    fprintf(fp, "%s: time_dat_       : %s\n", __func__, time_dat_.c_str());
+    fprintf(fp, "%s: vel_dat_        : %s\n", __func__, vel_dat_.c_str());
+    fprintf(fp, "%s: res_dat_        : %s\n", __func__, res_dat_.c_str());
+    fprintf(fp, "%s: sig_            : %e\n", __func__, sig_);
     fprintf(fp, "%s: outdir_         : %s\n", __func__, outdir_.c_str());
     fprintf(fp, "%s: outfile_head_   : %s\n", __func__, outfile_head_.c_str());
 }
@@ -50,9 +56,12 @@ void ArgValMvdethgh::Print(FILE* fp) const
 void ArgValMvdethgh::Null()
 {
     progname_     = "";
-    datalist_     = "";
-    img_info_dat_ = "";
-    par_dat_      = "";
+    data_list_    = "";
+    subimg_dat_   = "";
+    time_dat_     = "";
+    vel_dat_      = "";
+    res_dat_      = "";
+    sig_          = 0.0; 
     outdir_       = "";
     outfile_head_ = "";
 }
@@ -111,7 +120,7 @@ void ArgValMvdethgh::Usage(FILE* fp) const
 {
     fprintf(fp,
             "usage: %s [--help (0)] [--verbose (0)] [--debug (0)] "
-            "datalist  img_info_dat  par_dat  outdir  outfile_head  \n",
+            "data_list  subimg_dat  time_dat  vel_dat  res_dat  sig  outdir  outfile_head  \n",
             progname_.c_str());
     abort();
 }

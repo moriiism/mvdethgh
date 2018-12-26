@@ -9,10 +9,21 @@
 #include "mir_math.h"
 #include "mir_hist_info.h"
 
-void LoadParDat(string par_dat, const MifImgInfo* const img_info_in,
-                HistInfo1d* const hi1d_rho,
-                HistInfo1d* const hi1d_phi,
-                HistInfo1d* const hi1d_theta,
-                HistInfo1d* const hi1d_psi);
+void LoadHi1dVel(string vel_dat,
+                 HistInfo1d* const hi1d_vel);
+
+void LoadHi1dPar(string res_dat,
+                 const MifImgInfo* const img_info_subimg,
+                 HistInfo1d* const hi1d_rho,
+                 HistInfo1d* const hi1d_phi,
+                 HistInfo1d* const hi1d_psi);
+
+void LoadHi1dTime(string time_dat,
+                  HistInfo1d* const hi1d_time);
+
+void GetMeanStddevClip(long narr, const double* const val_arr,
+                       int nclip, double significance,
+                       double* const mean_ptr,
+                       double* const stddev_ptr);
 
 #endif // MORIIISM_MVDETHGH_SUB_MVDETHGH_H_
