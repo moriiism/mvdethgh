@@ -119,3 +119,189 @@ void GetMeanStddevClip(long narr, const double* const val_arr,
     *stddev_ptr = stddev;
 }
     
+
+//////////////////////////////////////////
+
+
+
+
+//        char out_tmp[kLineSize];
+//        sprintf(out_tmp, "tmp_%2.2ld.qdp", ivel);
+//        FILE* fp_tmp = fopen(out_tmp, "w");
+//        
+//        double* lc_mean_arr = new double [img_info_rec->GetNpixelImg()];        
+//        double* lc_stddev_arr = new double [img_info_rec->GetNpixelImg()];
+//        double* lc_max_arr = new double [img_info_rec->GetNpixelImg()];
+//        double* lc_ratio_max_arr = new double [img_info_rec->GetNpixelImg()];
+//        for(long iarr = 0; iarr < img_info_rec->GetNpixelImg(); iarr ++){
+//            lc_mean_arr[iarr] = 0.0;
+//            lc_stddev_arr[iarr] = 0.0;
+//            lc_max_arr[iarr] = 0.0;
+//            lc_ratio_max_arr[iarr] = 0.0;
+//        }
+//        for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
+//            for(long iposy = 0; iposy < hi1d_yval->GetNbin(); iposy ++){
+//                long itime_mid = ntime / 2;
+//                double xval = hi1d_xval->GetBinCenter(iposx);
+//                double yval = hi1d_yval->GetBinCenter(iposy);
+//                double zval = time_arr[itime_mid];
+//
+//                double* lc_arr = new double[nbin_psi];
+//                for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
+//                    double psi = hi1d_psi->GetBinCenter(ipsi);
+//                    double rho_cos_phi = xval * cos(psi) + yval * sin(psi);
+//                    double rho_sin_phi = -1 * xval * sin(psi) * cos(theta)
+//                        + yval * cos(psi) * cos(theta)
+//                        + zval * sin(theta);
+//                    double rho = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+//                    double phi = 0.0;
+//                    if(rho_sin_phi >= 0.0){
+//                        phi = acos(rho_cos_phi / rho);
+//                    } else {
+//                        phi = -1 * acos(rho_cos_phi / rho) + 2 * M_PI;
+//                    }
+//                    long irho = hi1d_rho->GetIbin(rho);
+//                    long iphi = hi1d_phi->GetIbin(phi);
+//                    long i_rho_phi_psi = irho + iphi * nbin_rho + ipsi * (nbin_rho * nbin_phi);
+//                    lc_arr[ipsi] = cube_arr[i_rho_phi_psi];
+//                }
+//
+//                
+//                double lc_mean   = MirMath::GetAMean(nbin_psi, lc_arr);                
+//                double lc_stddev = MirMath::GetStddev(nbin_psi, lc_arr);
+//                double lc_max    = MirMath::GetMax(nbin_psi, lc_arr);
+//                long index = iposx + iposy * hi1d_xval->GetNbin();
+//                lc_mean_arr[index] = lc_mean;
+//                lc_stddev_arr[index] = lc_stddev;
+//                lc_max_arr[index] = lc_max;
+//                double ratio_max = 0.0;
+//                if(lc_mean < 1e-10){
+//                    ratio_max = 0.0;
+//                } else {
+//                    ratio_max = lc_max / lc_mean;
+//
+//                    if(100 < xval && xval < 200 &&
+//                       150 < yval && yval < 250){
+//                        for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
+//                            fprintf(fp_tmp, "%ld %e\n", ipsi, lc_arr[ipsi]);
+//                        }
+//                    }
+//                }
+//                lc_ratio_max_arr[index] = ratio_max * lc_max;
+//                delete [] lc_arr;
+//
+//                fprintf(fp_tmp, "\n");
+//            }
+//        }
+//
+//        fclose(fp_tmp);        
+//
+//        sprintf(tag, "lc_mean_%2.2ld", ivel);
+//        MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+//                             2, bitpix,
+//                             img_info_subimg->GetNaxesArr(),
+//                             lc_mean_arr);
+//        sprintf(tag, "lc_stddev_%2.2ld", ivel);
+//        MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+//                             2, bitpix,
+//                             img_info_subimg->GetNaxesArr(),
+//                             lc_stddev_arr);
+//        sprintf(tag, "lc_max_%2.2ld", ivel);
+//        MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+//                               2, bitpix,
+//                               img_info_subimg->GetNaxesArr(),
+//                               lc_max_arr);
+//        sprintf(tag, "lc_ratio_max_%2.2ld", ivel);
+//        MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+//                               2, bitpix,
+//                               img_info_subimg->GetNaxesArr(),
+//                               lc_ratio_max_arr);
+//        delete [] lc_mean_arr;
+//        delete [] lc_stddev_arr;
+//        delete [] lc_max_arr;
+//        delete [] lc_ratio_max_arr;        
+
+//        // renormalize by initial brightness
+//        for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+//            long ipsi = iarr  / (nbin_rho * nbin_phi);
+//            long index2 = iarr % (nbin_rho * nbin_phi);
+//            long iphi = index2 / nbin_rho;
+//            long irho = index2 % nbin_rho;
+//            double rho = hi1d_rho->GetBinCenter(irho);
+//            double phi = hi1d_phi->GetBinCenter(iphi);
+//            double psi = hi1d_psi->GetBinCenter(ipsi);
+//            double zval_lo = hi1d_zval->GetLo();
+//            double tpar_lo = ( zval_lo - rho * sin(theta) * sin(phi) ) / cos(theta);
+//           
+//            double xval = rho * (cos(psi) * cos(phi)
+//                                 - sin(psi) * cos(theta) * sin(phi) )
+//                + tpar_lo * sin(psi) * sin(theta);
+//            double yval = rho * (sin(psi) * cos(phi)
+//                                 + cos(psi) * cos(theta) * sin(phi) )
+//                - tpar_lo * cos(psi) * sin(theta);
+//            if(xval < hi1d_xval->GetLo() || hi1d_xval->GetUp() < xval){
+//                continue;
+//            }
+//            if(yval < hi1d_yval->GetLo() || hi1d_yval->GetUp() < yval){
+//                continue;
+//            }            
+//            long iposx = hi1d_xval->GetIbin(xval);
+//            long iposy = hi1d_yval->GetIbin(yval);
+//            if(std_arr[0][iposx + iposy * hi1d_xval->GetNbin()] > argval->GetSig()){
+//                cube_arr[iarr] /= std_arr[0][iposx + iposy * hi1d_xval->GetNbin()];
+//            }
+//        }
+
+
+
+
+
+
+
+
+
+
+
+//            // calc norm
+//            double zval_md = (hi1d_zval->GetUp() - hi1d_zval->GetLo()) / 2.0;
+//            double tpar_md = ( zval_md - rho * sin(theta) * sin(phi) ) / cos(theta);
+//            double xval_md = rho * (cos(psi) * cos(phi)
+//                                    - sin(psi) * cos(theta) * sin(phi) )
+//                + tpar_md * sin(psi) * sin(theta);
+//            double yval_md = rho * (sin(psi) * cos(phi)
+//                                    + cos(psi) * cos(theta) * sin(phi) )
+//                - tpar_md * cos(psi) * sin(theta);
+//            double* lc_arr = new double[nbin_psi];
+//            for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
+//                double psi = hi1d_psi->GetBinCenter(ipsi);
+//                double rho_cos_phi = xval_md * cos(psi) + yval_md * sin(psi);
+//                double rho_sin_phi = -1 * xval_md * sin(psi) * cos(theta)
+//                    + yval_md * cos(psi) * cos(theta)
+//                    + zval_md * sin(theta);
+//                double rho = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+//                double phi = 0.0;
+//                if(rho_sin_phi >= 0.0){
+//                    phi = acos(rho_cos_phi / rho);
+//                } else {
+//                    phi = -1 * acos(rho_cos_phi / rho) + 2 * M_PI;
+//                }
+//                long irho = hi1d_rho->GetIbin(rho);
+//                long iphi = hi1d_phi->GetIbin(phi);
+//                long i_rho_phi_psi = irho + iphi * nbin_rho + ipsi * (nbin_rho * nbin_phi);
+//                lc_arr[ipsi] = cube_arr[i_rho_phi_psi];
+//            }
+//            
+//            double lc_mean   = MirMath::GetAMean(nbin_psi, lc_arr);                
+//            double lc_stddev = MirMath::GetStddev(nbin_psi, lc_arr);
+//            double lc_max    = MirMath::GetMax(nbin_psi, lc_arr);
+//            double ratio_max = 0.0;
+//            if(lc_mean < 1e-10){
+//                ratio_max = 0.0;
+//            } else {
+//                ratio_max = lc_max / lc_mean;
+//            }
+//            delete [] lc_arr;
+//
+//            double norm = ratio_max;
+//            
+//            // =====

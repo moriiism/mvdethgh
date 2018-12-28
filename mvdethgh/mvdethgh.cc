@@ -177,15 +177,23 @@ int main(int argc, char* argv[])
     printf("=== output standardized subcube ===\n");
 
     
-    MifImgInfo* img_info_cube = new MifImgInfo;
-    img_info_cube->InitSetCube(1, 1, 1, nbin_rho, nbin_phi, nbin_psi);
-    img_info_cube->PrintInfo();
+    MifImgInfo* img_info_par_cube = new MifImgInfo;
+    img_info_par_cube->InitSetCube(1, 1, 1, nbin_rho, nbin_phi, nbin_psi);
+    img_info_par_cube->PrintInfo();
+    MifImgInfo* img_info_par_img = new MifImgInfo;
+    img_info_par_img->InitSetImg(1, 1, nbin_rho, nbin_phi);
+    img_info_par_img->PrintInfo();
 
+    
     HistInfo1d* hi1d_xval = new HistInfo1d;
     HistInfo1d* hi1d_yval = new HistInfo1d;
     HistInfo1d* hi1d_zval = new HistInfo1d;
-    hi1d_xval->InitSetByNbin(0.0, img_info_rec->GetNaxesArrElm(0), img_info_rec->GetNaxesArrElm(0));
-    hi1d_yval->InitSetByNbin(0.0, img_info_rec->GetNaxesArrElm(1), img_info_rec->GetNaxesArrElm(1));
+    hi1d_xval->InitSetByNbin(0.0,
+                             img_info_rec->GetNaxesArrElm(0),
+                             img_info_rec->GetNaxesArrElm(0));
+    hi1d_yval->InitSetByNbin(0.0,
+                             img_info_rec->GetNaxesArrElm(1),
+                             img_info_rec->GetNaxesArrElm(1));
     LoadHi1dTime(argval->GetTimeDat(), hi1d_zval);
     printf("--- hi1d_xval, yval, zval ---\n");
     hi1d_xval->Print(stdout);
@@ -193,22 +201,113 @@ int main(int argc, char* argv[])
     hi1d_zval->Print(stdout);
     printf("=== hi1d_xval, yval, zval ===\n");
 
-    double* hough_max_vel_arr   = new double [nbin_vel];
-    long*   hough_max_index_arr = new long [nbin_vel];
-    for(long ivel = 0; ivel < nbin_vel; ivel ++){
-        hough_max_vel_arr[ivel] = 0.0;
-        hough_max_index_arr[ivel] = 0;
-    }
 
-    double* cube_arr = new double [nbin_rho * nbin_phi * nbin_psi];
-    long* index_arr = new long [nbin_rho * nbin_phi * nbin_psi];    
+    // velocity zero 
+    double theta_zero = atan(0.0);
+    double* cube_flat_vel_zero_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+    double* cube_vel_zero_arr = new double [nbin_rho * nbin_phi * nbin_psi];
     for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
-        cube_arr[iarr] = 0.0;
-        index_arr[iarr] = 0;
+        cube_vel_zero_arr[iarr] = 0.0;
+        cube_flat_vel_zero_arr[iarr] = 0.0;
     }
-    double* rec_arr = new double [img_info_rec->GetNpixelTotal()];
-    for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
-        rec_arr[iarr] = 0.0;
+    for(long itime = 0; itime < ntime; itime ++){
+        for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
+            for(long iposy = 0; iposy < hi1d_yval->GetNbin(); iposy ++){
+                double xval = hi1d_xval->GetBinCenter(iposx);
+                double yval = hi1d_yval->GetBinCenter(iposy);
+                double zval = time_arr[itime];
+                for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
+                    double psi = hi1d_psi->GetBinCenter(ipsi);
+                    double rho_cos_phi = xval * cos(psi) + yval * sin(psi);
+                    double rho_sin_phi = -1 * xval * sin(psi) * cos(theta_zero)
+                        + yval * cos(psi) * cos(theta_zero)
+                        + zval * sin(theta_zero);
+                    double rho = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+                    double phi = 0.0;
+                    if(rho_sin_phi >= 0.0){
+                        phi = acos(rho_cos_phi / rho);
+                    } else {
+                        phi = -1 * acos(rho_cos_phi / rho) + 2 * M_PI;
+                    }
+                    long irho = hi1d_rho->GetIbin(rho);
+                    long iphi = hi1d_phi->GetIbin(phi);
+                    long i_rho_phi_psi = irho + iphi * nbin_rho + ipsi * (nbin_rho * nbin_phi);
+                    if(std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()] > argval->GetSig()){
+                        cube_vel_zero_arr[i_rho_phi_psi] ++;
+                    }
+                    cube_flat_vel_zero_arr[i_rho_phi_psi] ++;
+                }
+            }
+        }
+    }
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+        if(cube_flat_vel_zero_arr[iarr] > 1.0e-10){
+            cube_vel_zero_arr[iarr] /= cube_flat_vel_zero_arr[iarr];
+        }
+    }
+    char tag[kLineSize];
+    sprintf(tag, "vel_zero");
+    MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                          3, bitpix,
+                          img_info_par_cube->GetNaxesArr(),
+                          cube_vel_zero_arr);
+
+    // velocity zero image
+    double* img_vel_zero_arr = new double [nbin_rho * nbin_phi];
+    double* img_flat_vel_zero_arr = new double [nbin_rho * nbin_phi];
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi; iarr ++){
+        img_vel_zero_arr[iarr] = 0.0;
+        img_flat_vel_zero_arr[iarr] = 0.0;
+    }
+    for(long itime = 0; itime < ntime; itime ++){
+        for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
+            for(long iposy = 0; iposy < hi1d_yval->GetNbin(); iposy ++){
+                double xval = hi1d_xval->GetBinCenter(iposx);
+                double yval = hi1d_yval->GetBinCenter(iposy);
+
+                double rho_cos_phi = xval;
+                double rho_sin_phi = yval;
+                double rho = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+                double phi = 0.0;
+                if(rho_sin_phi >= 0.0){
+                    phi = acos(rho_cos_phi / rho);
+                } else {
+                    phi = -1 * acos(rho_cos_phi / rho) + 2 * M_PI;
+                }
+                long irho = hi1d_rho->GetIbin(rho);
+                long iphi = hi1d_phi->GetIbin(phi);
+                long i_rho_phi = irho + iphi * nbin_rho;
+                if(std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()] > argval->GetSig()){
+                    img_vel_zero_arr[i_rho_phi] ++;
+                }
+                img_flat_vel_zero_arr[i_rho_phi] ++;
+            }
+        }
+    }
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi; iarr ++){
+        if(img_flat_vel_zero_arr[iarr] > 1.0e-10){
+            img_vel_zero_arr[iarr] /= img_flat_vel_zero_arr[iarr];
+        }
+    }
+    sprintf(tag, "vel_zero_img");
+    MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                           2, bitpix,
+                           img_info_par_img->GetNaxesArr(),
+                           img_vel_zero_arr);
+    sprintf(tag, "vel_zero_img_flat");
+    MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                           2, bitpix,
+                           img_info_par_img->GetNaxesArr(),
+                           img_flat_vel_zero_arr);
+    ///////
+    
+    double* par_cube_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+    double* par_cube_flat_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+    long* par_index_arr = new long [nbin_rho * nbin_phi * nbin_psi];    
+    for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+        par_cube_arr[iarr] = 0.0;
+        par_cube_flat_arr[iarr] = 0.0;
+        par_index_arr[iarr] = 0;
     }
     double* large_arr = new double [img_info_rec->GetNpixelTotal()];
     for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
@@ -217,8 +316,9 @@ int main(int argc, char* argv[])
     for(long ivel = 0; ivel < nbin_vel; ivel ++){
         double theta =  atan(hi1d_vel->GetBinCenter(ivel));
         for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
-            cube_arr[iarr] = 0.0;
-            index_arr[iarr] = 0.0;
+            par_cube_arr[iarr] = 0.0;
+            par_cube_flat_arr[iarr] = 0.0;
+            par_index_arr[iarr] = 0;
         }
         for(long itime = 0; itime < ntime; itime ++){
             for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
@@ -226,10 +326,6 @@ int main(int argc, char* argv[])
                     double xval = hi1d_xval->GetBinCenter(iposx);
                     double yval = hi1d_yval->GetBinCenter(iposy);
                     double zval = time_arr[itime];
-                    if(std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()] < argval->GetSig()){
-                        continue;
-                    }
-
                     for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
                         double psi = hi1d_psi->GetBinCenter(ipsi);
                         double rho_cos_phi = xval * cos(psi) + yval * sin(psi);
@@ -246,85 +342,132 @@ int main(int argc, char* argv[])
                         long irho = hi1d_rho->GetIbin(rho);
                         long iphi = hi1d_phi->GetIbin(phi);
                         long i_rho_phi_psi = irho + iphi * nbin_rho + ipsi * (nbin_rho * nbin_phi);
-                        // cube_arr[i_rho_phi_psi] ++;
-                        cube_arr[i_rho_phi_psi] += std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
+
+                        if(std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()] > argval->GetSig()){
+                            par_cube_arr[i_rho_phi_psi] ++;
+                        }
+                        par_cube_flat_arr[i_rho_phi_psi] ++;
+                        // cube_arr[i_rho_phi_psi] += std_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
                     }
                 }
             }
         }
-
-//        // renormalize by initial brightness
-//        for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
-//            long ipsi = iarr  / (nbin_rho * nbin_phi);
-//            long index2 = iarr % (nbin_rho * nbin_phi);
-//            long iphi = index2 / nbin_rho;
-//            long irho = index2 % nbin_rho;
-//            double rho = hi1d_rho->GetBinCenter(irho);
-//            double phi = hi1d_phi->GetBinCenter(iphi);
-//            double psi = hi1d_psi->GetBinCenter(ipsi);
-//            double zval_lo = hi1d_zval->GetLo();
-//            double tpar_lo = ( zval_lo - rho * sin(theta) * sin(phi) ) / cos(theta);
-//           
-//            double xval = rho * (cos(psi) * cos(phi)
-//                                 - sin(psi) * cos(theta) * sin(phi) )
-//                + tpar_lo * sin(psi) * sin(theta);
-//            double yval = rho * (sin(psi) * cos(phi)
-//                                 + cos(psi) * cos(theta) * sin(phi) )
-//                - tpar_lo * cos(psi) * sin(theta);
-//            if(xval < hi1d_xval->GetLo() || hi1d_xval->GetUp() < xval){
-//                continue;
-//            }
-//            if(yval < hi1d_yval->GetLo() || hi1d_yval->GetUp() < yval){
-//                continue;
-//            }            
-//            long iposx = hi1d_xval->GetIbin(xval);
-//            long iposy = hi1d_yval->GetIbin(yval);
-//            if(std_arr[0][iposx + iposy * hi1d_xval->GetNbin()] > argval->GetSig()){
-//                cube_arr[iarr] /= std_arr[0][iposx + iposy * hi1d_xval->GetNbin()];
-//            }
-//        }
-
-        char tag[kLineSize];
-        sprintf(tag, "vel_%2.2ld", ivel);
-        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
-                              3, bitpix,
-                              img_info_cube->GetNaxesArr(),
-                              cube_arr);
-        double hough_max = 0.0;
         for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
-            if(cube_arr[iarr] > hough_max){
-                hough_max = cube_arr[iarr];
-                hough_max_vel_arr[ivel] = cube_arr[iarr];
-                hough_max_index_arr[ivel] = iarr;
+            if(par_cube_flat_arr[iarr] > 1.0e-10){
+                par_cube_arr[iarr] /= par_cube_flat_arr[iarr];
             }
         }
 
-        long nlarge = 500;
-        MiSort::KthElement<double, long>(nlarge, nbin_rho * nbin_phi * nbin_psi, cube_arr, index_arr, 1);
+        sprintf(tag, "vel_%2.2ld", ivel);
+        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                              3, bitpix,
+                              img_info_par_cube->GetNaxesArr(),
+                              par_cube_arr);
 
+        double* hough_ratio_arr = new double[nbin_rho * nbin_phi * nbin_psi];
+        for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+            hough_ratio_arr[iarr] = 0.0;
+        }
+        for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+            if(par_cube_arr[iarr] < 1.0e-10){
+                continue;
+            }
+            
+            long ipsi = iarr / (nbin_rho * nbin_phi);
+            long index2 = iarr % (nbin_rho * nbin_phi);
+            long iphi = index2 / nbin_rho;
+            long irho = index2 % nbin_rho;
+            double rho = hi1d_rho->GetBinCenter(irho);
+            double phi = hi1d_phi->GetBinCenter(iphi);
+            double psi = hi1d_psi->GetBinCenter(ipsi);
+
+            double zval_md = (hi1d_zval->GetUp() - hi1d_zval->GetLo()) / 2.0;
+            double tpar_md = ( zval_md - rho * sin(theta) * sin(phi) ) / cos(theta);
+            double xval_md = rho * (cos(psi) * cos(phi)
+                                    - sin(psi) * cos(theta) * sin(phi) )
+                + tpar_md * sin(psi) * sin(theta);
+            double yval_md = rho * (sin(psi) * cos(phi)
+                                    + cos(psi) * cos(theta) * sin(phi) )
+                - tpar_md * cos(psi) * sin(theta);
+
+            double rho_cos_phi = xval_md;
+            double rho_sin_phi = yval_md;
+            double rho_md = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+            double phi_md = 0.0;
+            if(rho_sin_phi >= 0.0){
+                phi_md = acos(rho_cos_phi / rho_md);
+            } else {
+                phi_md = -1 * acos(rho_cos_phi / rho_md) + 2 * M_PI;
+            }
+            long irho_md = hi1d_rho->GetIbin(rho_md);
+            long iphi_md = hi1d_phi->GetIbin(phi_md);
+            long i_rho_phi = irho_md + iphi_md * nbin_rho;
+            
+            hough_ratio_arr[iarr] = par_cube_arr[iarr] - cube_vel_zero_arr[i_rho_phi];
+        }
+
+        long nlarge = 10000;
+        // MiSort::KthElement<double, long>(nlarge, nbin_rho * nbin_phi * nbin_psi, cube_arr, index_arr, 1);
+        //MiSort::Sort<double, long>(nbin_rho * nbin_phi * nbin_psi, par_cube_arr, par_index_arr, 1);
+        MiSort::Sort<double, long>(nbin_rho * nbin_phi * nbin_psi, hough_ratio_arr, par_index_arr, 1);
+        
         // k-th element
         for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
             large_arr[iarr] = 0.0;
         }
 
+        int ndetect = 0;
         for(int ilarge = 0; ilarge < nlarge; ilarge ++){
-            long ipsi = index_arr[ilarge] / (nbin_rho * nbin_phi);
-            long index2 = index_arr[ilarge] % (nbin_rho * nbin_phi);
+            long ipsi = par_index_arr[ilarge] / (nbin_rho * nbin_phi);
+            long index2 = par_index_arr[ilarge] % (nbin_rho * nbin_phi);
             long iphi = index2 / nbin_rho;
             long irho = index2 % nbin_rho;
 
             double rho = hi1d_rho->GetBinCenter(irho);
             double phi = hi1d_phi->GetBinCenter(iphi);
             double psi = hi1d_psi->GetBinCenter(ipsi);
+            //printf("ivel = %ld, vel = %e, theta = %e, rho = %e, phi = %e, psi = %e \n",
+            //       ivel, tan(theta), theta, rho, phi, psi);
 
-            printf("ivel = %ld, vel = %e, theta = %e, rho = %e, phi = %e, psi = %e \n",
-                   ivel, tan(theta), theta, rho, phi, psi);
+            double zval_md = (hi1d_zval->GetUp() - hi1d_zval->GetLo()) / 2.0;
+            double tpar_md = ( zval_md - rho * sin(theta) * sin(phi) ) / cos(theta);
+            double xval_md = rho * (cos(psi) * cos(phi)
+                                    - sin(psi) * cos(theta) * sin(phi) )
+                + tpar_md * sin(psi) * sin(theta);
+            double yval_md = rho * (sin(psi) * cos(phi)
+                                    + cos(psi) * cos(theta) * sin(phi) )
+                - tpar_md * cos(psi) * sin(theta);
+
+            double rho_cos_phi = xval_md;
+            double rho_sin_phi = yval_md;
+            double rho_md = sqrt(pow(rho_cos_phi, 2) + pow(rho_sin_phi, 2));
+            double phi_md = 0.0;
+            if(rho_sin_phi >= 0.0){
+                phi_md = acos(rho_cos_phi / rho_md);
+            } else {
+                phi_md = -1 * acos(rho_cos_phi / rho_md) + 2 * M_PI;
+            }
+            long irho_md = hi1d_rho->GetIbin(rho_md);
+            long iphi_md = hi1d_phi->GetIbin(phi_md);
+            long i_rho_phi = irho_md + iphi_md * nbin_rho;
+
+            printf("par_cube = %e, vel_zero = %e\n",
+                   par_cube_arr[par_index_arr[ilarge]], cube_vel_zero_arr[i_rho_phi]);
+
             double zval_lo = hi1d_zval->GetLo();
             double zval_up = hi1d_zval->GetUp();
             double tpar_lo = ( zval_lo - rho * sin(theta) * sin(phi) ) / cos(theta);
             double tpar_up = ( zval_up - rho * sin(theta) * sin(phi) ) / cos(theta);
             long ntpar = 100;
             double delta_tpar = (tpar_up - tpar_lo) / ntpar;
+
+            if(hough_ratio_arr[par_index_arr[ilarge]] < 0.0){
+                continue;
+            }
+            if(cube_vel_zero_arr[i_rho_phi] < 1.0e-10){
+                continue;
+            }
+            
             for(long itpar = 0; itpar < ntpar; itpar ++){
                 double tpar = tpar_lo + itpar * delta_tpar;
                 double xval = rho * (cos(psi) * cos(phi)
@@ -347,79 +490,26 @@ int main(int argc, char* argv[])
                 long iposx = hi1d_xval->GetIbin(xval);
                 long iposy = hi1d_yval->GetIbin(yval);
                 long iposz = hi1d_zval->GetIbin(zval);
-                long index = iposx + iposy * hi1d_xval->GetNbin() + iposz * (hi1d_xval->GetNbin() * hi1d_yval->GetNbin());
+                long index = iposx + iposy * hi1d_xval->GetNbin()
+                    + iposz * (hi1d_xval->GetNbin() * hi1d_yval->GetNbin());
+
                 large_arr[index] = 1.0;
             }
+            ndetect ++;
+
+            if(ndetect > 10){
+                break;
+            }
         }
+        printf("------\n");
+        
         sprintf(tag, "large_%2.2ld", ivel);
         MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
                               3, bitpix,
                               img_info_rec->GetNaxesArr(),
                               large_arr);
-
-
-
-
-        
-
-        for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
-            rec_arr[iarr] = 0.0;
-        }
-        
-        long ipsi = hough_max_index_arr[ivel] / (nbin_rho * nbin_phi);
-        long index2 = hough_max_index_arr[ivel] % (nbin_rho * nbin_phi);
-        long iphi = index2 / nbin_rho;
-        long irho = index2 % nbin_rho;
-
-        double rho = hi1d_rho->GetBinCenter(irho);
-        double phi = hi1d_phi->GetBinCenter(iphi);
-        double psi = hi1d_psi->GetBinCenter(ipsi);
-
-        printf("ivel = %ld, vel = %e, theta = %e, rho = %e, phi = %e, psi = %e \n",
-               ivel, tan(theta), theta, rho, phi, psi);
-        double zval_lo = hi1d_zval->GetLo();
-        double zval_up = hi1d_zval->GetUp();
-        double tpar_lo = ( zval_lo - rho * sin(theta) * sin(phi) ) / cos(theta);
-        double tpar_up = ( zval_up - rho * sin(theta) * sin(phi) ) / cos(theta);
-        long ntpar = 100;
-        double delta_tpar = (tpar_up - tpar_lo) / ntpar;
-        for(long itpar = 0; itpar < ntpar; itpar ++){
-            double tpar = tpar_lo + itpar * delta_tpar;
-            double xval = rho * (cos(psi) * cos(phi)
-                                 - sin(psi) * cos(theta) * sin(phi) )
-                + tpar * sin(psi) * sin(theta);
-            double yval = rho * (sin(psi) * cos(phi)
-                                 + cos(psi) * cos(theta) * sin(phi) )
-                - tpar * cos(psi) * sin(theta);
-            double zval = rho * sin(theta) * sin(phi) + tpar * cos(theta);
-
-            if(xval < hi1d_xval->GetLo() || hi1d_xval->GetUp() < xval){
-                continue;
-            }
-            if(yval < hi1d_yval->GetLo() || hi1d_yval->GetUp() < yval){
-                continue;
-            }            
-            if(zval < hi1d_zval->GetLo() || hi1d_zval->GetUp() < zval){
-                continue;
-            }            
-            long iposx = hi1d_xval->GetIbin(xval);
-            long iposy = hi1d_yval->GetIbin(yval);
-            long iposz = hi1d_zval->GetIbin(zval);
-            long index = iposx + iposy * hi1d_xval->GetNbin() + iposz * (hi1d_xval->GetNbin() * hi1d_yval->GetNbin());
-            rec_arr[index] = 1.0;
-        }
-        sprintf(tag, "rec_%2.2ld", ivel);
-        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
-                              3, bitpix,
-                              img_info_rec->GetNaxesArr(),
-                              rec_arr);
     }
 
-    FILE* fp_out = fopen("out.qdp", "w");
-    for(long ivel = 0; ivel < nbin_vel; ivel++){
-        fprintf(fp_out, "%e %e\n", hi1d_vel->GetBinCenter(ivel), hough_max_vel_arr[ivel]);
-    }
-    fclose(fp_out);
 
     double time_ed = MiTime::GetTimeSec();
     printf("time_ed - time_st = %e\n", time_ed - time_st);
