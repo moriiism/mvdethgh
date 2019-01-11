@@ -13,16 +13,12 @@ LDLIBS_OPENBLAS  = $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MIBLASLIB_LIB) $(MILIB_LI
 	$(ROOT_ALLLIBS) $(LAPACK_LIB) $(OPENBLAS_LIB) $(MT_LIB) $(LIB) -lgfortran
 
 
-TARGET = mvdethgh  mvdethgh_mkflat
+TARGET = mkmask
 
 all: $(TARGET) 
 
-mvdethgh: mvdethgh.o  arg_mvdethgh.o  sub.o
-	$(CXXN) $@.o arg_$@.o sub.o ${LDLIBS} -o $@
-
-
-mvdethgh_mkflat: mvdethgh_mkflat.o  arg_mvdethgh_mkflat.o  sub.o
-	$(CXXN) $@.o arg_$@.o sub.o ${LDLIBS} -o $@
+mkmask: mkmask.o  arg_mkmask.o
+	$(CXXN) $@.o arg_$@.o ${LDLIBS} -o $@
 
 
 .SUFFIXES:

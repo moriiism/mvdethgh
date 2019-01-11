@@ -1,4 +1,4 @@
-#include "sub_mvdethgh.h"
+#include "sub.h"
 
 void LoadHi1dVel(string vel_dat,
                  HistInfo1d* const hi1d_vel)
@@ -75,48 +75,6 @@ void LoadHi1dTime(string time_dat,
     printf("=== read time_dat ===\n");
 
     hi1d_time->InitSetByNbin(time_lo, time_up, nbin_time);
-}
-
-// get mean and stddev by clipping
-void GetMeanStddevClip(long narr, const double* const val_arr,
-                       int nclip, double significance,
-                       double* const mean_ptr,
-                       double* const stddev_ptr)
-{
-    double mean   = 0.0;
-    double stddev = 0.0;
-    int* use_arr = new int[narr];
-    for(long iarr = 0; iarr < narr; iarr++){
-        use_arr[iarr] = 1;
-    }
-    
-    for(int iclip = 0; iclip < nclip; iclip ++){
-        // get mean, stddev
-        vector<double> val_vec;
-        for(long iarr = 0; iarr < narr; iarr++){
-            if(use_arr[iarr] > 0){
-                val_vec.push_back(val_arr[iarr]);
-            }
-        }
-        mean   = MirMath::GetAMean(val_vec);
-        stddev = MirMath::GetSqrtOfUnbiasedVariance(val_vec);
-        printf("iclip, mean, stddev, nsize = %d, %e, %e, %d\n",
-               iclip, mean, stddev, (int) val_vec.size());
-        long ninc_unuse = 0;
-        for(long iarr = 0; iarr < narr; iarr++){
-            if( use_arr[iarr] > 0 &&
-                fabs(val_arr[iarr] - mean) > significance * stddev){
-                use_arr[iarr] = 0;
-                ninc_unuse ++;
-            }
-        }
-        if(0 == ninc_unuse){
-            printf("clipping end.\n");
-            break;
-        }
-    }
-    *mean_ptr = mean;
-    *stddev_ptr = stddev;
 }
     
 
