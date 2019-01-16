@@ -1,0 +1,61 @@
+#
+# get psf
+#
+
+mkdir setup
+
+cat << EOF > setup/data.list
+# 2d-fits  time(sec)
+../data/tomoe_2010wc9/2010wc9_1.fits    0.25
+../data/tomoe_2010wc9/2010wc9_2.fits    0.75
+../data/tomoe_2010wc9/2010wc9_3.fits    1.25
+../data/tomoe_2010wc9/2010wc9_4.fits    1.75
+../data/tomoe_2010wc9/2010wc9_5.fits    2.25
+../data/tomoe_2010wc9/2010wc9_6.fits    2.75
+../data/tomoe_2010wc9/2010wc9_7.fits	3.25
+../data/tomoe_2010wc9/2010wc9_8.fits	3.75
+../data/tomoe_2010wc9/2010wc9_9.fits	4.25
+../data/tomoe_2010wc9/2010wc9_10.fits	4.75
+../data/tomoe_2010wc9/2010wc9_11.fits	5.25
+../data/tomoe_2010wc9/2010wc9_12.fits	5.75
+EOF
+
+# sub-array image region
+cat << EOF > setup/subimg.dat
+# x_st(pixel)  y_st(pixel)
+# x_ed(pixel)  y_ed(pixel)
+#201 301
+#400 500
+101 201
+400 500
+EOF
+
+cat << EOF > setup/func_par.dat
+sigma_xp    5.0
+sigma_yp    5.0
+norm	    1.0
+rot_angle   0.0
+mu_xp	    0.0
+mu_yp	    0.0
+shift_z	    0.0
+EOF
+
+data_list=setup/data.list
+# subimg_dat=setup/subimg.dat
+subimg_dat="none"
+func="Gauss2dFunc"
+par_file=setup/func_par.dat
+nbin_kernel_half=10
+nbin_psf_half=10
+outdir=psf
+outfile_head=psf
+
+/home/morii/work/github/moriiism/mvdethgh/mkpsf/mkpsf \
+$data_list \
+$subimg_dat \
+$func \
+$par_file \
+$nbin_kernel_half \
+$nbin_psf_half \
+$outdir \
+$outfile_head

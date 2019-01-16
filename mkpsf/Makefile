@@ -18,8 +18,8 @@ TARGET = mkpsf
 
 all: $(TARGET) 
 
-mkpsf: mkpsf.o  arg_mkpsf.o
-	$(CXXN) $@.o arg_$@.o ${LDLIBS} -o $@
+mkpsf: mkpsf.o  arg_mkpsf.o 
+	$(CXXN) $@.o arg_$@.o ../lib/libmvdethgh.a ${LDLIBS} -o $@
 
 
 .SUFFIXES:
