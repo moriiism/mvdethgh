@@ -1,10 +1,10 @@
-#include "arg_mkmask.h"
+#include "arg_preproc.h"
 
 // public
 
-void ArgValMkmask::Init(int argc, char* argv[])
+void ArgValPreproc::Init(int argc, char* argv[])
 {
-    progname_ = "mkmask";
+    progname_ = "preproc";
 
     option long_options[] = {
         {"debug",       required_argument, NULL, 'd'},
@@ -31,7 +31,7 @@ void ArgValMkmask::Init(int argc, char* argv[])
     outfile_head_   = argv[iarg]; iarg++;
 }
 
-void ArgValMkmask::Print(FILE* fp) const
+void ArgValPreproc::Print(FILE* fp) const
 {
     fprintf(fp, "%s: g_flag_debug   : %d\n", __func__, g_flag_debug);
     fprintf(fp, "%s: g_flag_help    : %d\n", __func__, g_flag_help);
@@ -47,7 +47,7 @@ void ArgValMkmask::Print(FILE* fp) const
 
 // private
 
-void ArgValMkmask::Null()
+void ArgValPreproc::Null()
 {
     progname_     = "";
     data_list_    = "";
@@ -57,7 +57,7 @@ void ArgValMkmask::Null()
     outfile_head_ = "";
 }
 
-void ArgValMkmask::SetOption(int argc, char* argv[], option* long_options)
+void ArgValPreproc::SetOption(int argc, char* argv[], option* long_options)
 {
     if(0 < g_flag_verbose){
         MPrintInfo("start...");
@@ -107,7 +107,7 @@ void ArgValMkmask::SetOption(int argc, char* argv[], option* long_options)
 }
 
 
-void ArgValMkmask::Usage(FILE* fp) const
+void ArgValPreproc::Usage(FILE* fp) const
 {
     fprintf(fp,
             "usage: %s [--help (0)] [--verbose (0)] [--debug (0)] "

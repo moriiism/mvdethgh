@@ -1,11 +1,11 @@
-#ifndef MORIIISM_MVDETHGH_MKMASK_ARG_MKMASK_H_
-#define MORIIISM_MVDETHGH_MKMASK_ARG_MKMASK_H_
+#ifndef MORIIISM_MVDETHGH_PREPROC_ARG_PREPROC_H_
+#define MORIIISM_MVDETHGH_PREPROC_ARG_PREPROC_H_
 
 #include "mi_base.h"
 
-class ArgValMkmask : public MiArgBase{
+class ArgValPreproc : public MiArgBase{
 public:
-    ArgValMkmask() :
+    ArgValPreproc() :
         MiArgBase(),
         progname_(""),
         data_list_(""),
@@ -13,7 +13,7 @@ public:
         psf_dat_(""),
         outdir_(""),
         outfile_head_("") {}
-    ~ArgValMkmask(){
+    ~ArgValPreproc(){
         Null();
     }
     void Init(int argc, char* argv[]);
@@ -39,4 +39,4 @@ private:
     void Usage(FILE* fp) const;
 };
 
-#endif // MORIIISM_MVDETHGH_MKMASK_ARG_MKMASK_H_
+#endif // MORIIISM_MVDETHGH_PREPROC_ARG_PREPROC_H_

@@ -1,11 +1,11 @@
-#ifndef MORIIISM_MVDETHGH_MVDETHGH_ARG_MVDETHGH_MKFLAT_H_
-#define MORIIISM_MVDETHGH_MVDETHGH_ARG_MVDETHGH_MKFLAT_H_
+#ifndef MORIIISM_MVDETHGH_MKFLAT_ARG_MKFLAT_H_
+#define MORIIISM_MVDETHGH_MKFLAT_ARG_MKFLAT_H_
 
 #include "mi_base.h"
 
-class ArgValMvdethghMkflat : public MiArgBase{
+class ArgValMkflat : public MiArgBase{
 public:
-    ArgValMvdethghMkflat() :
+    ArgValMkflat() :
         MiArgBase(),
         progname_(""),
         data_list_(""),
@@ -13,10 +13,9 @@ public:
         time_dat_(""),
         vel_dat_(""),
         res_dat_(""),
-        sig_(0.0),
         outdir_(""),
         outfile_head_("") {}
-    ~ArgValMvdethghMkflat(){
+    ~ArgValMkflat(){
         Null();
     }
     void Init(int argc, char* argv[]);
@@ -28,7 +27,6 @@ public:
     string GetTimeDat() const {return time_dat_;};
     string GetVelDat() const {return vel_dat_;};
     string GetResDat() const {return res_dat_;};
-    double GetSig() const {return sig_;};
     string GetOutdir() const {return outdir_;};
     string GetOutfileHead() const {return outfile_head_;};
 
@@ -39,7 +37,6 @@ private:
     string time_dat_;
     string vel_dat_;
     string res_dat_;
-    double sig_;
     string outdir_;
     string outfile_head_;
 
@@ -48,4 +45,4 @@ private:
     void Usage(FILE* fp) const;
 };
 
-#endif // MORIIISM_MVDETHGH_MVDETHGH_ARG_MVDETHGH_MKFLAT_H_
+#endif // MORIIISM_MVDETHGH_MKFLAT_ARG_MKFLAT_H_

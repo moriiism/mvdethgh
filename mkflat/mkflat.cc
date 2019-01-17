@@ -1,13 +1,6 @@
-#include "mir_math.h"
-#include "mir_math_util.h"
-#include "mir_data1d_ope.h"
-#include "mir_hist_info.h"
-#include "mi_str.h"
-#include "mif_fits.h"
-#include "mif_img_info.h"
 #include "mi_time.h"
-#include "arg_mvdethgh_mkflat.h"
-#include "sub.h"
+#include "mvdethghlib.h"
+#include "arg_mkflat.h"
 
 // global variable 
 int g_flag_debug = 0;
@@ -20,97 +13,29 @@ int main(int argc, char* argv[])
     
     double time_st = MiTime::GetTimeSec();
     
-    ArgValMvdethghMkflat* argval = new ArgValMvdethghMkflat;
+    ArgValMkflat* argval = new ArgValMkflat;
     argval->Init(argc, argv);
     argval->Print(stdout);
-
-    char logfile[kLineSize];
-    if( MiIolib::TestFileExist(argval->GetOutdir()) ){
-        char cmd[kLineSize];
-        sprintf(cmd, "mkdir -p %s", argval->GetOutdir().c_str());
-        system(cmd);
-    }
-    sprintf(logfile, "%s/%s_%s.log",
-            argval->GetOutdir().c_str(),
-            argval->GetOutfileHead().c_str(),
-            argval->GetProgname().c_str());
-    FILE* fp_log = fopen(logfile, "w");
-    MiIolib::Printf2(fp_log, "-----------------------------\n");
+    
+    FILE* fp_log = NULL;
+    OpenLogfile(argval->GetOutdir(),
+                argval->GetOutfileHead(),
+                argval->GetProgname(),
+                &fp_log);
     argval->Print(fp_log);
 
-    printf("--- read data list ---\n");
-    string* line_arr = NULL;
-    long nline = 0;
-    MiIolib::GenReadFileSkipComment(argval->GetDataList(), &line_arr, &nline);
-    printf("nline = %ld\n", nline);
-    string* fitsfile_arr = new string[nline];
-    double* time_arr     = new double[nline];
-    for(long iline = 0; iline < nline; iline ++){
-        int nsplit = 0;
-        string* split_arr = NULL;
-        MiStr::GenSplit(line_arr[iline], &nsplit, &split_arr);
-        if(2 != nsplit){
-            printf("Bad data_list(=%s): nsplit(%d) != 2 @ iline(%ld).\n",
-                   argval->GetDataList().c_str(), nsplit, iline);
-            abort();
-        }
-        fitsfile_arr[iline] = split_arr[0];
-        time_arr[iline] = atof(split_arr[1].c_str());
-        MiStr::DelSplit(split_arr);
-    }
-    delete [] line_arr;
-    for(long iline = 0; iline < nline; iline ++){
-        printf("%s  %e\n", fitsfile_arr[iline].c_str(), time_arr[iline]);
-    }
-    // check fits images
-    double* npx_arr = new double[nline];
-    double* npy_arr = new double[nline];
-    for(long iline = 0; iline < nline; iline ++){
-        int naxis = MifFits::GetNaxis(fitsfile_arr[iline]);
-        if(2 != naxis){
-            printf("fits file is not image, then abort.\n");
-            abort();
-        }
-        npx_arr[iline] = MifFits::GetAxisSize(fitsfile_arr[iline], 0);
-        npy_arr[iline] = MifFits::GetAxisSize(fitsfile_arr[iline], 1);
-        printf("%ld: (npx, npy) = (%f, %f)\n", iline, npx_arr[iline], npy_arr[iline]);
-    }
-    double npx_amean = MirMath::GetAMean(nline, npx_arr);
-    double npy_amean = MirMath::GetAMean(nline, npy_arr);
-    double npx_stddev = MirMath::GetStddev(nline, npx_arr);
-    double npy_stddev = MirMath::GetStddev(nline, npy_arr);
-    if(npx_stddev > 1.0e-10 || npy_stddev > 1.0e-10){
-        printf("bad image size, then abort\n");
-        abort();
-    }
-    delete [] npx_arr;
-    delete [] npy_arr;
-    printf("=== read data list ===\n");
-
-    printf("--- read 2d images ---\n");
-    MifImgInfo* img_info_subimg = new MifImgInfo;
-    if("none" == argval->GetSubimgDat()){
-        img_info_subimg->InitSetImg(1, 1, npx_amean, npy_amean);
-    } else {
-        img_info_subimg->Load(argval->GetSubimgDat());
-        img_info_subimg->PrintInfo();
-    }
-    long ntime = nline;
-    double** data_arr = new double* [ntime];
+    long ntime = 0;
+    double* time_arr = NULL;
+    double** data_img_arr = NULL;
+    MifImgInfo* img_info = NULL;
     int bitpix = 0;
-    for(int itime = 0; itime < ntime; itime ++){
-        MifFits::InFitsImageD(fitsfile_arr[itime], img_info_subimg,
-                              &bitpix, &data_arr[itime]);
-    }
-    printf("bitpix = %d\n", bitpix);
-    printf("=== read 2d images ===\n");
-
-
-
-    MifImgInfo* img_info_rec = new MifImgInfo;
-    img_info_rec->InitSetCube(1, 1, 1, img_info_subimg->GetNaxesArrElm(0),
-                              img_info_subimg->GetNaxesArrElm(1), ntime);
-    img_info_rec->PrintInfo();
+    LoadData(argval->GetDataList(),
+             argval->GetSubimgDat(),
+             &ntime,
+             &time_arr,
+             &data_img_arr,
+             &img_info,
+             &bitpix);
 
     printf("--- load parameters ---\n");
     HistInfo1d* hi1d_vel   = new HistInfo1d;
@@ -118,7 +43,7 @@ int main(int argc, char* argv[])
     HistInfo1d* hi1d_phi   = new HistInfo1d;
     HistInfo1d* hi1d_psi   = new HistInfo1d;
     LoadHi1dVel(argval->GetVelDat(), hi1d_vel);
-    LoadHi1dPar(argval->GetResDat(), img_info_subimg,
+    LoadHi1dPar(argval->GetResDat(), img_info,
                 hi1d_rho, hi1d_phi, hi1d_psi);
     long nbin_vel   = hi1d_vel->GetNbin();
     long nbin_rho   = hi1d_rho->GetNbin();
@@ -138,11 +63,11 @@ int main(int argc, char* argv[])
     HistInfo1d* hi1d_yval = new HistInfo1d;
     HistInfo1d* hi1d_zval = new HistInfo1d;
     hi1d_xval->InitSetByNbin(0.0,
-                             img_info_rec->GetNaxesArrElm(0),
-                             img_info_rec->GetNaxesArrElm(0));
+                             img_info->GetNaxesArrElm(0),
+                             img_info->GetNaxesArrElm(0));
     hi1d_yval->InitSetByNbin(0.0,
-                             img_info_rec->GetNaxesArrElm(1),
-                             img_info_rec->GetNaxesArrElm(1));
+                             img_info->GetNaxesArrElm(1),
+                             img_info->GetNaxesArrElm(1));
     LoadHi1dTime(argval->GetTimeDat(), hi1d_zval);
     printf("--- hi1d_xval, yval, zval ---\n");
     hi1d_xval->Print(stdout);

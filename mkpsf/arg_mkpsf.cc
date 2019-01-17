@@ -18,7 +18,7 @@ void ArgValMkpsf::Init(int argc, char* argv[])
     SetOption(argc, argv, long_options);
     
     printf("ArgVal::Init: # of arg = %d\n", argc - optind);
-    int narg = 8;
+    int narg = 7;
     if (argc - optind != narg){
         printf("# of arguments must be %d.\n", narg);
         Usage(stdout);
@@ -26,8 +26,7 @@ void ArgValMkpsf::Init(int argc, char* argv[])
     int iarg = optind;
     data_list_      = argv[iarg]; iarg++;
     subimg_dat_     = argv[iarg]; iarg++;
-    func_           = argv[iarg]; iarg++;
-    par_file_       = argv[iarg]; iarg++; 
+    val_smooth_     = atof(argv[iarg]); iarg++;
     nbin_kernel_half_  = atoi(argv[iarg]); iarg++;
     nbin_psf_half_  = atoi(argv[iarg]); iarg++;
     outdir_         = argv[iarg]; iarg++;
@@ -43,8 +42,7 @@ void ArgValMkpsf::Print(FILE* fp) const
     fprintf(fp, "%s: progname_       : %s\n", __func__, progname_.c_str());
     fprintf(fp, "%s: data_list_      : %s\n", __func__, data_list_.c_str());
     fprintf(fp, "%s: subimg_dat_     : %s\n", __func__, subimg_dat_.c_str());
-    fprintf(fp, "%s: func_           : %s\n", __func__, func_.c_str());
-    fprintf(fp, "%s: par_file_       : %s\n", __func__, par_file_.c_str());
+    fprintf(fp, "%s: val_smooth_     : %e\n", __func__, val_smooth_);
     fprintf(fp, "%s: nbin_kernel_half_ : %d\n", __func__, nbin_kernel_half_);
     fprintf(fp, "%s: nbin_psf_half_  : %d\n", __func__, nbin_psf_half_);
     fprintf(fp, "%s: outdir_         : %s\n", __func__, outdir_.c_str());
@@ -58,8 +56,7 @@ void ArgValMkpsf::Null()
     progname_     = "";
     data_list_    = "";
     subimg_dat_   = "";
-    func_         = "";
-    par_file_     = "";
+    val_smooth_   = 0.0;
     nbin_kernel_half_ = 0;
     nbin_psf_half_ = 0;
     outdir_       = "";
@@ -120,7 +117,7 @@ void ArgValMkpsf::Usage(FILE* fp) const
 {
     fprintf(fp,
             "usage: %s [--help (0)] [--verbose (0)] [--debug (0)] "
-            "data_list  subimg_dat  func  par_file  nbin_kernel_half  nbin_psf_half  outdir  outfile_head  \n",
+            "data_list  subimg_dat  val_smooth  nbin_kernel_half  nbin_psf_half  outdir  outfile_head  \n",
             progname_.c_str());
     abort();
 }

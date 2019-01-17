@@ -3,27 +3,22 @@ include ../../mitool/milib/Makefile.in
 include ../../mitool/miblaslib/Makefile.in
 include ../../mitool/mifitslib/Makefile.in
 include ../../mitool/mirootlib/Makefile.in
+include ../../mitool/mifunclib/Makefile.in
+include ../Makefile.in
 
-INCLUDE = $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MIBLASLIB_INC) $(MILIB_INC) $(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
-LDLIBS  = $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MIBLASLIB_LIB) $(MILIB_LIB) $(CFITSIO_LIB) \
-	$(ROOT_ALLLIBS) $(LAPACK_LIB) $(BLAS_LIB) $(MT_LIB) $(LIB) -lgfortran
+INCLUDE = $(MVDETHGHLIB_INC) \
+	$(MIFUNCLIB_INC) $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MILIB_INC) \
+	$(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
+LDLIBS  = $(MVDETHGHLIB_LIB) \
+	$(MIFUNCLIB_LIB) $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MILIB_LIB) \
+	$(CFITSIO_LIB) $(ROOT_ALLLIBS) $(MT_LIB) $(LIB)
 
-INCLUDE_OPENBLAS = $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MIBLASLIB_INC) $(MILIB_INC) $(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
-LDLIBS_OPENBLAS  = $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MIBLASLIB_LIB) $(MILIB_LIB) $(CFITSIO_LIB) \
-	$(ROOT_ALLLIBS) $(LAPACK_LIB) $(OPENBLAS_LIB) $(MT_LIB) $(LIB) -lgfortran
-
-
-TARGET = mvdethgh  mvdethgh_mkflat
+TARGET = mvdethgh
 
 all: $(TARGET) 
 
-mvdethgh: mvdethgh.o  arg_mvdethgh.o  sub.o
-	$(CXXN) $@.o arg_$@.o sub.o ${LDLIBS} -o $@
-
-
-mvdethgh_mkflat: mvdethgh_mkflat.o  arg_mvdethgh_mkflat.o  sub.o
-	$(CXXN) $@.o arg_$@.o sub.o ${LDLIBS} -o $@
-
+mvdethgh: mvdethgh.o  arg_mvdethgh.o
+	$(CXXN) $@.o arg_$@.o ${LDLIBS} -o $@
 
 .SUFFIXES:
 .SUFFIXES: .o .c .f .F .cc

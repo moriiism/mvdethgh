@@ -1,0 +1,9 @@
+#
+# Makefile.in
+#
+
+MVDETHGH_DIR := /home/morii/work/github/moriiism/mvdethgh
+
+### mvdethghlib
+MVDETHGHLIB_INC := -I$(MVDETHGH_DIR)/lib
+MVDETHGHLIB_LIB := -L$(MVDETHGH_DIR)/lib -lmvdethghlib

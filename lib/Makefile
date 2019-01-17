@@ -5,21 +5,19 @@ include ../../mitool/mifitslib/Makefile.in
 include ../../mitool/mirootlib/Makefile.in
 include ../../mitool/mifunclib/Makefile.in
 
-INCLUDE := $(MIFUNCLIB_INC) $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MIBLASLIB_INC) \
-	$(MILIB_INC) $(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
+INCLUDE := $(MIFUNCLIB_INC) $(MIROOTLIB_INC) $(MIFITSLIB_INC) $(MILIB_INC) \
+	$(CFITSIO_INC) $(ROOT_INC) $(MT_INC)
 
+TARGET := libmvdethghlib.a
 
-TARGET := libmvdethgh.a
-
-
-OBJ := sub.o
+OBJ := mvdethghlib.o
 
 all: $(TARGET) 
 
-libmvdethgh.a: ${OBJ}
+libmvdethghlib.a: ${OBJ}
 	$(AR) -r $@ $(OBJ)
 
-libmvdethgh.so: ${OBJ}
+libmvdethghlib.so: ${OBJ}
 	$(CC) -shared -g -O2 -o $@ ${OBJ}
 
 .SUFFIXES:

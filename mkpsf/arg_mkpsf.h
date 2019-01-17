@@ -10,8 +10,7 @@ public:
         progname_(""),
         data_list_(""),
         subimg_dat_(""),
-        func_(""),
-        par_file_(""),
+        val_smooth_(0.0),
         nbin_kernel_half_(0),
         nbin_psf_half_(0),
         outdir_(""),
@@ -25,8 +24,7 @@ public:
     string GetProgname() const {return progname_;};
     string GetDataList() const {return data_list_;};
     string GetSubimgDat() const {return subimg_dat_;};
-    string GetFunc() const {return func_;};
-    string GetParFile() const {return par_file_;};
+    double GetValSmooth() const {return val_smooth_;};
     int    GetNbinKernelHalf() const {return nbin_kernel_half_;};
     int    GetNbinPsfHalf() const {return nbin_psf_half_;};    
     string GetOutdir() const {return outdir_;};
@@ -36,8 +34,7 @@ private:
     string progname_;
     string data_list_;
     string subimg_dat_;
-    string func_;
-    string par_file_;
+    double val_smooth_;
     int    nbin_kernel_half_;
     int    nbin_psf_half_;
     string outdir_;

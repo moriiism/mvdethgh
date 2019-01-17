@@ -13,11 +13,11 @@ LDLIBS  = $(MVDETHGHLIB_LIB) \
 	$(MIFUNCLIB_LIB) $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MILIB_LIB) \
 	$(CFITSIO_LIB) $(ROOT_ALLLIBS) $(MT_LIB) $(LIB)
 
-TARGET = mkpsf
+TARGET = mkflat
 
 all: $(TARGET) 
 
-mkpsf: mkpsf.o  arg_mkpsf.o 
+mkflat: mkflat.o  arg_mkflat.o
 	$(CXXN) $@.o arg_$@.o ${LDLIBS} -o $@
 
 .SUFFIXES:
