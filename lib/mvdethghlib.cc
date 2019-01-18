@@ -445,9 +445,9 @@ void LoadHi1dVel(string vel_dat,
     double vel_lo = 0;
     double vel_up = 0;
     sscanf(line_arr[0].c_str(), "%ld  %lf  %lf", &nbin_vel, &vel_lo, &vel_up);
-    delete [] line_arr;    
+    delete [] line_arr;
     printf("=== read vel_dat ===\n");
-
+    
     hi1d_vel->InitSetByNbin(vel_lo, vel_up, nbin_vel);
 }
 

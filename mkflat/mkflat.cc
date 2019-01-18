@@ -116,6 +116,7 @@ int main(int argc, char* argv[])
                           3, bitpix,
                           img_info_par_cube->GetNaxesArr(),
                           cube_flat_vel_zero_arr);
+    printf("=== velocity zero ===\n");
     ///////
     
     double* par_cube_flat_arr = new double [nbin_rho * nbin_phi * nbin_psi];
@@ -123,6 +124,8 @@ int main(int argc, char* argv[])
         par_cube_flat_arr[iarr] = 0.0;
     }
     for(long ivel = 0; ivel < nbin_vel; ivel ++){
+        printf("ivel (nvel) = %ld (%ld)\n", ivel, nbin_vel);
+        
         double theta =  atan(hi1d_vel->GetBinCenter(ivel));
         for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
             par_cube_flat_arr[iarr] = 0.0;

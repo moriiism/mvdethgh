@@ -14,6 +14,7 @@ public:
         vel_dat_(""),
         res_dat_(""),
         sig_(0.0),
+        ndet_(0),
         outdir_(""),
         outfile_head_("") {}
     ~ArgValMvdethgh(){
@@ -29,6 +30,7 @@ public:
     string GetVelDat() const {return vel_dat_;};
     string GetResDat() const {return res_dat_;};
     double GetSig() const {return sig_;};
+    long   GetNdet() const {return ndet_;};
     string GetOutdir() const {return outdir_;};
     string GetOutfileHead() const {return outfile_head_;};
 
@@ -40,6 +42,7 @@ private:
     string vel_dat_;
     string res_dat_;
     double sig_;
+    long   ndet_;
     string outdir_;
     string outfile_head_;
 

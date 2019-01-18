@@ -13,12 +13,15 @@ LDLIBS  = $(MVDETHGHLIB_LIB) \
 	$(MIFUNCLIB_LIB) $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MILIB_LIB) \
 	$(CFITSIO_LIB) $(ROOT_ALLLIBS) $(MT_LIB) $(LIB)
 
-TARGET = mvdethgh
+TARGET = mvdethgh  mvdethgh4d
 
 all: $(TARGET) 
 
 mvdethgh: mvdethgh.o  arg_mvdethgh.o
 	$(CXXN) $@.o arg_$@.o ${LDLIBS} -o $@
+
+mvdethgh4d: mvdethgh4d.o  arg_mvdethgh.o
+	$(CXXN) $@.o arg_mvdethgh.o ${LDLIBS} -o $@
 
 .SUFFIXES:
 .SUFFIXES: .o .c .f .F .cc
