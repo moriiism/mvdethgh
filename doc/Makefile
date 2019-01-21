@@ -1,9 +1,9 @@
-LIBS = lib  
-BINS = mkflat  mkpsf  mvdethgh  preproc
+LIBS = 
+BINS = 
 
-SUBDIR = $(LIBS) $(BINS)  doc  script
+SUBDIR = 
 
-ALL = $(LIBS) $(BINS)
+ALL = 
 
 all:
 	for dir in $(ALL); do \

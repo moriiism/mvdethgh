@@ -62,6 +62,22 @@ int main(int argc, char* argv[])
              argval->GetOutfileHead(),
              "cube_std");
 
+    double** data_img_above_th_arr    = NULL;
+    long ndet = 0;
+    GenImgAboveThArr(ntime,
+                     data_img_arr,
+                     std_img_arr,
+                     img_info,
+                     argval->GetSig(),
+                     &data_img_above_th_arr,
+                     &ndet);
+    printf("ndet above threshold = %ld\n", ndet);
+    SaveCube(ntime, img_info, data_img_above_th_arr,
+             bitpix,
+             argval->GetOutdir(),
+             argval->GetOutfileHead(),
+             "cube_above_th");
+
     printf("--- load parameters ---\n");
     HistInfo1d* hi1d_vel   = new HistInfo1d;
     HistInfo1d* hi1d_rho   = new HistInfo1d;
@@ -116,7 +132,6 @@ int main(int argc, char* argv[])
                               ntime);
     img_info_rec->PrintInfo();
 
-    long nskip = 0;
     for(long ivel = 0; ivel < nbin_vel; ivel ++){
         double theta =  atan(hi1d_vel->GetBinCenter(ivel));
         for(long itime = 0; itime < ntime; itime ++){
@@ -127,7 +142,6 @@ int main(int argc, char* argv[])
                     double zval = time_arr[itime];
                     if(std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()]
                        < argval->GetSig()){
-                        nskip ++;
                         continue;
                     }
                     for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
@@ -159,9 +173,7 @@ int main(int argc, char* argv[])
             }
         }
     }
-    printf("number of above threshold = %ld\n",
-           img_info_rec->GetNpixelTotal() * nbin_vel - nskip);
-    
+
     // load flat
     double* par4d_flat_arr = new double [nbin_par];
     for(long ivel = 0; ivel < nbin_vel; ivel ++){
@@ -187,6 +199,22 @@ int main(int argc, char* argv[])
         }
     }
     delete [] par4d_flat_arr;
+
+    // save par3d_arr
+    for(long ivel = 0; ivel < nbin_vel; ivel ++){
+        double* par3d_arr = new double [nbin_rho * nbin_phi * nbin_psi];
+        for(long iarr = 0; iarr < nbin_rho * nbin_phi * nbin_psi; iarr ++){
+            long i_rho_phi_psi_vel = iarr + ivel * (nbin_rho * nbin_phi * nbin_psi);
+            par3d_arr[iarr] = par4d_weight_arr[i_rho_phi_psi_vel];
+        }
+        char tag[kLineSize];
+        sprintf(tag, "ivel_%2.2ld", ivel);
+        MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), tag,
+                              3, bitpix,
+                              img_info_par3d->GetNaxesArr(),
+                              par3d_arr);
+        delete [] par3d_arr;
+    }
 
     // MiSort::Sort<double, long>(nbin_par, par4d_arr, par_index_arr, 1);
     MiSort::Sort<double, long>(nbin_par, par4d_weight_arr, par_index_arr, 1);

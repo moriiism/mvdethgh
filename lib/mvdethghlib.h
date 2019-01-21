@@ -33,6 +33,14 @@ void GenMedianImg(long ntime,
                   const MifImgInfo* const img_info,
                   double** const median_img_arr_ptr);
 
+void GenImgAboveThArr(long ntime,
+                      const double* const* const data_img_arr,
+                      const double* const* const std_img_arr,
+                      const MifImgInfo* const img_info,
+                      double threshold,
+                      double*** const out_img_arr_ptr,
+                      long* const ndet_ptr);
+
 void GetPeakXY(const MifImgInfo* const img_info,
                const double* const median_img_arr,
                int nbin_kernel_half, double val_smooth,
