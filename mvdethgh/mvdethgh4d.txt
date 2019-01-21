@@ -1,0 +1,46 @@
+#
+# mvdethgh4d.txt
+#
+
+cat << EOF > setup/mvobj.list
+# 2d-fits  time(sec)
+preproc/preproc_mvobj_00.fits  0.25
+preproc/preproc_mvobj_01.fits  0.75
+preproc/preproc_mvobj_02.fits  1.25
+preproc/preproc_mvobj_03.fits  1.75
+preproc/preproc_mvobj_04.fits  2.25
+preproc/preproc_mvobj_05.fits  2.75
+preproc/preproc_mvobj_06.fits  3.25
+preproc/preproc_mvobj_07.fits  3.75
+preproc/preproc_mvobj_08.fits  4.25
+preproc/preproc_mvobj_09.fits  4.75
+preproc/preproc_mvobj_10.fits  5.25
+preproc/preproc_mvobj_11.fits  5.75
+EOF
+
+
+data_list=setup/mvobj_conv.list
+subimg_dat="none"
+time_dat=setup/time.dat
+vel_dat=setup/vel.dat
+res_dat=setup/res.dat
+sig=5
+var_ratio=0.5
+ndet=50
+margin=5.0
+outdir=det
+outfile_head=det_5s
+
+/home/morii/work/github/moriiism/mvdethgh/mvdethgh/mvdethgh4d \
+$data_list \
+$subimg_dat \
+$time_dat \
+$vel_dat \
+$res_dat \
+$sig \
+$var_ratio \
+$ndet \
+$margin \
+$outdir \
+$outfile_head
+

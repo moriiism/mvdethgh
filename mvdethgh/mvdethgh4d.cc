@@ -132,18 +132,18 @@ int main(int argc, char* argv[])
                               ntime);
     img_info_rec->PrintInfo();
 
-    for(long ivel = 0; ivel < nbin_vel; ivel ++){
-        double theta =  atan(hi1d_vel->GetBinCenter(ivel));
-        for(long itime = 0; itime < ntime; itime ++){
-            for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
-                for(long iposy = 0; iposy < hi1d_yval->GetNbin(); iposy ++){
-                    double xval = hi1d_xval->GetBinCenter(iposx);
-                    double yval = hi1d_yval->GetBinCenter(iposy);
-                    double zval = time_arr[itime];
-                    if(std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()]
-                       < argval->GetSig()){
-                        continue;
-                    }
+    for(long itime = 0; itime < ntime; itime ++){
+        for(long iposx = 0; iposx < hi1d_xval->GetNbin(); iposx ++){
+            for(long iposy = 0; iposy < hi1d_yval->GetNbin(); iposy ++){
+                double xval = hi1d_xval->GetBinCenter(iposx);
+                double yval = hi1d_yval->GetBinCenter(iposy);
+                double zval = time_arr[itime];
+                if(std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()]
+                   < argval->GetSig()){
+                    continue;
+                }
+                for(long ivel = 0; ivel < nbin_vel; ivel ++){
+                    double theta =  atan(hi1d_vel->GetBinCenter(ivel));
                     for(long ipsi = 0; ipsi < nbin_psi; ipsi ++){
                         double psi = hi1d_psi->GetBinCenter(ipsi);
                         double rho_cos_phi = xval * cos(psi) + yval * sin(psi);
@@ -162,17 +162,15 @@ int main(int argc, char* argv[])
                         long i_rho_phi_psi_vel = irho + iphi * nbin_rho
                             + ipsi * (nbin_rho * nbin_phi)
                             + ivel * (nbin_rho * nbin_phi * nbin_psi);
-                        if(std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()]
-                           > argval->GetSig()){
-                            par4d_arr[i_rho_phi_psi_vel] ++;
-                            par4d_weight_arr[i_rho_phi_psi_vel] +=
-                                std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
-                        }
+                        par4d_arr[i_rho_phi_psi_vel] ++;
+                        par4d_weight_arr[i_rho_phi_psi_vel] +=
+                            std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
                     }
                 }
             }
         }
     }
+
 
     // load flat
     double* par4d_flat_arr = new double [nbin_par];
@@ -220,14 +218,19 @@ int main(int argc, char* argv[])
     MiSort::Sort<double, long>(nbin_par, par4d_weight_arr, par_index_arr, 1);
 
     //////////
-    double* rec_arr = new double [img_info_rec->GetNpixelTotal()];
+    double* rec_arr    = new double [img_info_rec->GetNpixelTotal()];
     for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
         rec_arr[iarr] = 0.0;
     }
-    double margin = 5.0;
+    double margin = argval->GetMargin();
     int ndetect_max = argval->GetNdet();
     int ndetect = 0;
     for(long iarr = 0; iarr < nbin_par; iarr ++){
+
+        if(par4d_weight_arr[par_index_arr[iarr]] < 1.0){
+            break;
+        }
+        
         long ivel = par_index_arr[iarr] / (nbin_rho * nbin_phi * nbin_psi);
         long index2 = par_index_arr[iarr] % (nbin_rho * nbin_phi * nbin_psi);
         long ipsi = index2 / (nbin_rho * nbin_phi);
@@ -238,56 +241,59 @@ int main(int argc, char* argv[])
         double phi = hi1d_phi->GetBinCenter(iphi);
         double psi = hi1d_psi->GetBinCenter(ipsi);
         double vel = hi1d_vel->GetBinCenter(ivel);
-        
-        double zval_lo = hi1d_zval->GetLo();
-        double zval_up = hi1d_zval->GetUp();
-        double theta =  atan(hi1d_vel->GetBinCenter(ivel));
-        double tpar_lo = ( zval_lo - rho * sin(theta) * sin(phi) ) / cos(theta);
-        double tpar_up = ( zval_up - rho * sin(theta) * sin(phi) ) / cos(theta);
-        long ntpar = 100;
-        double delta_tpar = (tpar_up - tpar_lo) / ntpar;
 
-        int flag_outof_margin = 0;
-        for(long itpar = 0; itpar < ntpar; itpar ++){
-            double tpar = tpar_lo + itpar * delta_tpar;
-            double xval = rho * (cos(psi) * cos(phi)
-                                 - sin(psi) * cos(theta) * sin(phi) )
-                + tpar * sin(psi) * sin(theta);
-            double yval = rho * (sin(psi) * cos(phi)
-                                 + cos(psi) * cos(theta) * sin(phi) )
-                - tpar * cos(psi) * sin(theta);
-                
+        
+
+        // pixel value along line, which must be constant
+        int flag_bad = 0;
+        double* line_arr = new double[ntime];
+        long* index_line_arr = new long[ntime];
+        for(long itime = 0; itime < hi1d_zval->GetNbin(); itime ++){
+            double zval  = hi1d_zval->GetBinCenter(itime);
+            double theta =  atan(vel);
+            double xval = rho * (cos(phi) * cos(psi) - sin(phi) * sin(psi) / cos(theta) )
+                + zval * tan(theta) * sin(psi);
+            double yval = rho * (cos(phi) * sin(psi) + sin(phi) * cos(psi) / cos(theta) )
+                - zval * tan(theta) * cos(psi);
             if(xval < hi1d_xval->GetLo() + margin || hi1d_xval->GetUp() - margin < xval){
-                flag_outof_margin ++;
+                line_arr[itime] = 0.0;
+                flag_bad ++;
+                continue;
             }
             if(yval < hi1d_yval->GetLo() + margin || hi1d_yval->GetUp() - margin < yval){
-                flag_outof_margin ++;
+                line_arr[itime] = 0.0;
+                flag_bad ++;
+                continue;
             }
+            long iposx = hi1d_xval->GetIbin(xval);
+            long iposy = hi1d_yval->GetIbin(yval);
+            index_line_arr[itime] = iposx + iposy * hi1d_xval->GetNbin()
+                + itime * hi1d_xval->GetNbin() * hi1d_yval->GetNbin();
+            line_arr[itime] = std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
         }
-        if(0 == flag_outof_margin){
-            for(long itpar = 0; itpar < ntpar; itpar ++){
-                double tpar = tpar_lo + itpar * delta_tpar;
-                double xval = rho * (cos(psi) * cos(phi)
-                                     - sin(psi) * cos(theta) * sin(phi) )
-                    + tpar * sin(psi) * sin(theta);
-                double yval = rho * (sin(psi) * cos(phi)
-                                     + cos(psi) * cos(theta) * sin(phi) )
-                    - tpar * cos(psi) * sin(theta);
-                double zval = rho * sin(theta) * sin(phi) + tpar * cos(theta);
-                if(zval < hi1d_zval->GetLo() || hi1d_zval->GetUp() < zval){
-                    continue;
-                }     
-                long iposx = hi1d_xval->GetIbin(xval);
-                long iposy = hi1d_yval->GetIbin(yval);
-                long iposz = hi1d_zval->GetIbin(zval);
-                long index = iposx + iposy * hi1d_xval->GetNbin()
-                    + iposz * (hi1d_xval->GetNbin() * hi1d_yval->GetNbin());
-                rec_arr[index] = 1.0;
-            }
-            printf("%e  %e  %e  %e  ! vel, rho, phi, psi\n",
-                   vel, rho, phi, psi);
+        double stddev = MirMath::GetStddev(ntime, line_arr);
+        double mean   = MirMath::GetAMean(ntime, line_arr);
+
+        if(mean <= DBL_EPSILON){
+            flag_bad ++;
+        }
+        if(stddev / mean > argval->GetVarRatio()){
+            flag_bad ++;
+        }
+
+        if(0 == flag_bad){
             ndetect ++;
+            printf("ndetect = %d, iarr = %ld, mean = %e, stddev / mean = %e, par4d = %e  !  %e  %e  %e  %e  ! vel, rho, phi, psi\n",
+                   ndetect, iarr, mean, stddev/mean, par4d_weight_arr[par_index_arr[iarr]],
+                   vel, rho, phi, psi);
+            for(long itime = 0; itime < hi1d_zval->GetNbin(); itime ++){
+                long index = index_line_arr[itime];
+                rec_arr[index] = line_arr[itime];
+            }
         }
+        delete [] line_arr;
+        delete [] index_line_arr;
+
         if(ndetect >= ndetect_max){
             break;
         }
