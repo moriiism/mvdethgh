@@ -15,6 +15,7 @@ public:
         res_dat_(""),
         sig_(0.0),
         var_ratio_(0.0),
+        sig_line_(0.0),
         ndet_(0),
         margin_(0.0),
         outdir_(""),
@@ -33,6 +34,7 @@ public:
     string GetResDat() const {return res_dat_;};
     double GetSig() const {return sig_;};
     double GetVarRatio() const {return var_ratio_;};
+    double GetSigLine() const {return sig_line_;};
     long   GetNdet() const {return ndet_;};
     double GetMargin() const {return margin_;};
     string GetOutdir() const {return outdir_;};
@@ -47,6 +49,7 @@ private:
     string res_dat_;
     double sig_;
     double var_ratio_;
+    double sig_line_;
     long   ndet_;
     double margin_;
     string outdir_;

@@ -226,11 +226,6 @@ int main(int argc, char* argv[])
     int ndetect_max = argval->GetNdet();
     int ndetect = 0;
     for(long iarr = 0; iarr < nbin_par; iarr ++){
-
-        if(par4d_weight_arr[par_index_arr[iarr]] < 1.0){
-            break;
-        }
-        
         long ivel = par_index_arr[iarr] / (nbin_rho * nbin_phi * nbin_psi);
         long index2 = par_index_arr[iarr] % (nbin_rho * nbin_phi * nbin_psi);
         long ipsi = index2 / (nbin_rho * nbin_phi);
@@ -242,12 +237,11 @@ int main(int argc, char* argv[])
         double psi = hi1d_psi->GetBinCenter(ipsi);
         double vel = hi1d_vel->GetBinCenter(ivel);
 
-        
-
         // pixel value along line, which must be constant
         int flag_bad = 0;
         double* line_arr = new double[ntime];
         long* index_line_arr = new long[ntime];
+        double sum2_std_img = 0.0;
         for(long itime = 0; itime < hi1d_zval->GetNbin(); itime ++){
             double zval  = hi1d_zval->GetBinCenter(itime);
             double theta =  atan(vel);
@@ -270,9 +264,11 @@ int main(int argc, char* argv[])
             index_line_arr[itime] = iposx + iposy * hi1d_xval->GetNbin()
                 + itime * hi1d_xval->GetNbin() * hi1d_yval->GetNbin();
             line_arr[itime] = std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()];
+            sum2_std_img += pow(std_img_arr[itime][iposx + iposy * hi1d_xval->GetNbin()], 2);
         }
         double stddev = MirMath::GetStddev(ntime, line_arr);
         double mean   = MirMath::GetAMean(ntime, line_arr);
+        double sigma_std_img = sqrt(sum2_std_img);
 
         if(mean <= DBL_EPSILON){
             flag_bad ++;
@@ -280,11 +276,12 @@ int main(int argc, char* argv[])
         if(stddev / mean > argval->GetVarRatio()){
             flag_bad ++;
         }
-
+      
         if(0 == flag_bad){
             ndetect ++;
-            printf("ndetect = %d, iarr = %ld, mean = %e, stddev / mean = %e, par4d = %e  !  %e  %e  %e  %e  ! vel, rho, phi, psi\n",
+            printf("ndetect = %d, iarr = %ld, mean = %e, stddev / mean = %e, par4d = %e, sigma_line = %e  !  %e  %e  %e  %e  ! vel, rho, phi, psi\n",
                    ndetect, iarr, mean, stddev/mean, par4d_weight_arr[par_index_arr[iarr]],
+                   sigma_std_img,
                    vel, rho, phi, psi);
             for(long itime = 0; itime < hi1d_zval->GetNbin(); itime ++){
                 long index = index_line_arr[itime];
@@ -294,6 +291,9 @@ int main(int argc, char* argv[])
         delete [] line_arr;
         delete [] index_line_arr;
 
+        if(sigma_std_img < argval->GetSigLine()){
+            break;
+        }
         if(ndetect >= ndetect_max){
             break;
         }

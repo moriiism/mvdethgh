@@ -18,7 +18,7 @@ void ArgValMvdethgh::Init(int argc, char* argv[])
     SetOption(argc, argv, long_options);
     
     printf("ArgVal::Init: # of arg = %d\n", argc - optind);
-    int narg = 11;
+    int narg = 12;
     if (argc - optind != narg){
         printf("# of arguments must be %d.\n", narg);
         Usage(stdout);
@@ -31,6 +31,7 @@ void ArgValMvdethgh::Init(int argc, char* argv[])
     res_dat_        = argv[iarg]; iarg++;
     sig_            = atof(argv[iarg]); iarg++;
     var_ratio_      = atof(argv[iarg]); iarg++;
+    sig_line_       = atof(argv[iarg]); iarg++;
     ndet_           = atoi(argv[iarg]); iarg++;
     margin_         = atof(argv[iarg]); iarg++;
     outdir_         = argv[iarg]; iarg++;
@@ -51,6 +52,7 @@ void ArgValMvdethgh::Print(FILE* fp) const
     fprintf(fp, "%s: res_dat_        : %s\n", __func__, res_dat_.c_str());
     fprintf(fp, "%s: sig_            : %e\n", __func__, sig_);
     fprintf(fp, "%s: var_ratio_      : %e\n", __func__, var_ratio_);
+    fprintf(fp, "%s: sig_line_       : %e\n", __func__, sig_line_);
     fprintf(fp, "%s: ndet_           : %ld\n", __func__, ndet_);
     fprintf(fp, "%s: margin_         : %e\n", __func__, margin_);
     fprintf(fp, "%s: outdir_         : %s\n", __func__, outdir_.c_str());
@@ -69,6 +71,7 @@ void ArgValMvdethgh::Null()
     res_dat_      = "";
     sig_          = 0.0;
     var_ratio_    = 0.0;
+    sig_line_     = 0.0;
     ndet_         = 0;
     margin_       = 0.0;
     outdir_       = "";
@@ -129,7 +132,7 @@ void ArgValMvdethgh::Usage(FILE* fp) const
 {
     fprintf(fp,
             "usage: %s [--help (0)] [--verbose (0)] [--debug (0)] "
-            "data_list  subimg_dat  time_dat  vel_dat  res_dat  sig  var_ratio  ndet  margin  outdir  outfile_head  \n",
+            "data_list  subimg_dat  time_dat  vel_dat  res_dat  sig  var_ratio  sig_line  ndet  margin  outdir  outfile_head  \n",
             progname_.c_str());
     abort();
 }

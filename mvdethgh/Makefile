@@ -13,7 +13,7 @@ LDLIBS  = $(MVDETHGHLIB_LIB) \
 	$(MIFUNCLIB_LIB) $(MIROOTLIB_LIB) $(MIFITSLIB_LIB) $(MILIB_LIB) \
 	$(CFITSIO_LIB) $(ROOT_ALLLIBS) $(MT_LIB) $(LIB)
 
-TARGET = mvdethgh  mvdethgh4d
+TARGET = mvdethgh4d
 
 all: $(TARGET) 
 

@@ -118,10 +118,13 @@ subimg_dat="none"
 time_dat=setup/time.dat
 vel_dat=setup/vel.dat
 res_dat=setup/res.dat
-sig=1
-ndet=10
+sig=5.0
+var_ratio=0.5
+sig_line=5.0
+ndet=100
+margin=5.0
 outdir=det
-outfile_head=det
+outfile_head=det_5s
 
 /home/morii/work/github/moriiism/mvdethgh/mvdethgh/mvdethgh4d \
 $data_list \
@@ -130,7 +133,11 @@ $time_dat \
 $vel_dat \
 $res_dat \
 $sig \
+$var_ratio \
+$sig_line \
 $ndet \
+$margin \
 $outdir \
 $outfile_head
+
 
