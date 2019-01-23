@@ -217,6 +217,12 @@ int main(int argc, char* argv[])
     // MiSort::Sort<double, long>(nbin_par, par4d_arr, par_index_arr, 1);
     MiSort::Sort<double, long>(nbin_par, par4d_weight_arr, par_index_arr, 1);
 
+
+    char outfile[kLineSize];
+    sprintf(outfile, "%s/%s_par.dat",
+            argval->GetOutdir().c_str(), argval->GetOutfileHead().c_str());
+    FILE* fp_outfile = fopen(outfile, "w");
+
     //////////
     double* rec_arr    = new double [img_info_rec->GetNpixelTotal()];
     for(long iarr = 0; iarr < img_info_rec->GetNpixelTotal(); iarr++){
@@ -279,10 +285,14 @@ int main(int argc, char* argv[])
       
         if(0 == flag_bad){
             ndetect ++;
-            printf("ndetect = %d, iarr = %ld, mean = %e, stddev / mean = %e, par4d = %e, sigma_line = %e  !  %e  %e  %e  %e  ! vel, rho, phi, psi\n",
+            printf("ndetect = %d, iarr = %ld, mean = %e, stddev / mean = %e, par4d = %e, sigma_line = %e  "
+                   "!  %e  %e  %e  %e  ! vel, rho, phi, psi\n",
                    ndetect, iarr, mean, stddev/mean, par4d_weight_arr[par_index_arr[iarr]],
                    sigma_std_img,
                    vel, rho, phi, psi);
+
+            fprintf(fp_outfile, "%e  %e  %e  %e  ! vel, rho, phi, psi\n", vel, rho, phi, psi);
+            
             for(long itime = 0; itime < hi1d_zval->GetNbin(); itime ++){
                 long index = index_line_arr[itime];
                 rec_arr[index] = line_arr[itime];
@@ -298,6 +308,26 @@ int main(int argc, char* argv[])
             break;
         }
     }
+    fclose(fp_outfile);
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
         
     MifFits::OutFitsCubeD(argval->GetOutdir(), argval->GetOutfileHead(), "rec",
                           3, bitpix,

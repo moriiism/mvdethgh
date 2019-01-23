@@ -1,0 +1,18 @@
+#
+# mkdetimg.txt
+#
+
+# data_list=setup/mvobj_conv.list
+data_list=setup/data.list
+par_dat="det/det_5s_par.dat"
+nbin_detimg_half=100
+outdir=img
+outfile_head=img
+
+/home/morii/work/github/moriiism/mvdethgh/mkdetimg/mkdetimg \
+$data_list \
+$par_dat \
+$nbin_detimg_half \
+$outdir \
+$outfile_head
+

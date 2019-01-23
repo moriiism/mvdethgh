@@ -1,5 +1,5 @@
 LIBS = lib  
-BINS = mkflat  mkpsf  mvdethgh  preproc
+BINS = mkflat  mkpsf  mvdethgh  preproc  mkdetimg
 
 SUBDIR = $(LIBS) $(BINS)  doc  script
 

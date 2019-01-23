@@ -536,3 +536,53 @@ void LoadHi1dTime(string time_dat,
 
     hi1d_time->InitSetByNbin(time_lo, time_up, nbin_time);
 }
+
+
+void GenDetImg(const HistDataNerr2d* const* const hd2d_arr,
+               const double* const time_arr, long ntime,
+               int nbin_detimg_half,
+               double theta, double rho, double phi, double psi,
+               HistDataNerr2d** const hd2d_img_ptr)
+{
+    long itime0 = 0;
+    double zval0  = time_arr[itime0];
+    double xval0 = rho * (cos(phi) * cos(psi) - sin(phi) * sin(psi) / cos(theta) )
+        + zval0 * tan(theta) * sin(psi);
+    double yval0 = rho * (cos(phi) * sin(psi) + sin(phi) * cos(psi) / cos(theta) )
+        - zval0 * tan(theta) * cos(psi);
+
+    HistInfo2d* hi2d_img = new HistInfo2d;
+    hi2d_img->InitSetByMidPoint(xval0, 1.0, nbin_detimg_half, "ceil",
+                                yval0, 1.0, nbin_detimg_half, "ceil");
+    HistDataNerr2d* hd2d_img = new HistDataNerr2d;
+    hd2d_img->Init(hi2d_img);
+        
+    for(long itime = 0; itime < ntime; itime ++){
+        double zval = time_arr[itime];
+        double xval = rho * (cos(phi) * cos(psi) - sin(phi) * sin(psi) / cos(theta) )
+            + zval * tan(theta) * sin(psi);
+        double yval = rho * (cos(phi) * sin(psi) + sin(phi) * cos(psi) / cos(theta) )
+            - zval * tan(theta) * cos(psi);
+        double xval_shift = xval - xval0;
+        double yval_shift = yval - yval0;
+        for(long ibin = 0; ibin < hd2d_img->GetNbin(); ibin ++){
+            double xval_bin = hi2d_img->GetBinCenterXFromIbin(ibin);
+            double yval_bin = hi2d_img->GetBinCenterYFromIbin(ibin);
+            double xval_bin_new = xval_bin + xval_shift;
+            double yval_bin_new = yval_bin + yval_shift;
+            double oval = 0.0;
+            if(xval_bin_new < hd2d_arr[itime]->GetXvalLo() ||
+               hd2d_arr[itime]->GetXvalUp() < xval_bin_new ||
+               yval_bin_new < hd2d_arr[itime]->GetYvalLo() ||
+               hd2d_arr[itime]->GetYvalUp() < yval_bin_new  ){
+                oval = 0.0;
+            } else {
+                oval = hd2d_arr[itime]->GetOvalElmAtXY(xval_bin_new, yval_bin_new);
+            }
+            hd2d_img->Fill(xval_bin, yval_bin, oval);
+        }
+    }
+    delete hi2d_img;
+    *hd2d_img_ptr = hd2d_img;
+}
+
