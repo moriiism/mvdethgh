@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     ArgValPreproc* argval = new ArgValPreproc;
     argval->Init(argc, argv);
     argval->Print(stdout);
-
+    
     FILE* fp_log = NULL;
     OpenLogfile(argval->GetOutdir(),
                 argval->GetOutfileHead(),
@@ -64,11 +64,18 @@ int main(int argc, char* argv[])
              argval->GetOutfileHead(),
              "cube_std");
 
+    double time_median_st = MiTime::GetTimeSec();
+    
     double* median_img_arr = NULL;
     GenMedianImg(ntime,
                  debias_img_arr,
                  img_info,
                  &median_img_arr);
+
+//    GenMedianImgByNthElement(ntime,
+//                             debias_img_arr,
+//                             img_info,
+//                             &median_img_arr);
     
     printf("--- output median image ---\n");
     MifFits::OutFitsImageD(argval->GetOutdir(), argval->GetOutfileHead(), "median",
@@ -76,6 +83,7 @@ int main(int argc, char* argv[])
                            img_info->GetNaxesArr(),
                            median_img_arr);
     printf("=== output median image ===\n");
+
 
     double** mvobj_img_arr = NULL;
     GenMvobjImgArr(ntime,
@@ -95,6 +103,12 @@ int main(int argc, char* argv[])
                argval->GetOutfileHead(),
                "mvobj");
 
+    double time_median_ed = MiTime::GetTimeSec();
+    printf("time_median = %e\n", time_median_ed - time_median_st);
+    
+
+    double time_conv_st = MiTime::GetTimeSec();
+    
     double** conv_img_arr = NULL;
     GenConvPsf(ntime, img_info, mvobj_img_arr,
                argval->GetPsfDat(),
@@ -104,6 +118,9 @@ int main(int argc, char* argv[])
                argval->GetOutdir(),
                argval->GetOutfileHead(),
                "conv");
+
+    double time_conv_ed = MiTime::GetTimeSec();
+    printf("time_conv = %e\n", time_conv_ed - time_conv_st);
     
     double time_ed = MiTime::GetTimeSec();
     printf("time_ed - time_st = %e\n", time_ed - time_st);

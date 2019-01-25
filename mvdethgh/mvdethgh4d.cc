@@ -302,9 +302,11 @@ int main(int argc, char* argv[])
         delete [] index_line_arr;
 
         if(sigma_std_img < argval->GetSigLine()){
+            printf("break by 1\n");
             break;
         }
         if(ndetect >= ndetect_max){
+            printf("break by 2\n");
             break;
         }
     }

@@ -160,6 +160,36 @@ void GenMedianImg(long ntime,
     *median_img_arr_ptr = median_img_arr;
 }
 
+void GenMedianImgByNthElement(long ntime,
+                              const double* const* const debias_img_arr,
+                              const MifImgInfo* const img_info,
+                              double** const median_img_arr_ptr)
+{
+    double* median_img_arr = new double [img_info->GetNpixelImg()];
+    for(long iarr = 0; iarr < img_info->GetNpixelImg(); iarr ++){
+        median_img_arr[iarr] = 0.0;
+    }
+    double* time_tmp_arr = new double [ntime];
+    for(long iarr = 0; iarr < img_info->GetNpixelImg(); iarr ++){
+        for(long itime = 0; itime < ntime; itime ++){
+            time_tmp_arr[itime] = debias_img_arr[itime][iarr];
+        }
+        double median = GetMedianByNthElement(ntime, time_tmp_arr);
+        median_img_arr[iarr] = median;
+    }
+    delete [] time_tmp_arr;
+    *median_img_arr_ptr = median_img_arr;
+}
+
+double GetMedianByNthElement(long narr,
+                             const double* const val_arr)
+{
+    long half = (long) (narr / 2.0);
+    long* index_arr = new long [narr];
+    MiSort::KthElement<double, long>(half, narr, val_arr, index_arr, 1);
+    double median = val_arr[index_arr[half]];
+    return median;
+}
 
 void GenImgAboveThArr(long ntime,
                       const double* const* const data_img_arr,

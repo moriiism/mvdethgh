@@ -33,6 +33,14 @@ void GenMedianImg(long ntime,
                   const MifImgInfo* const img_info,
                   double** const median_img_arr_ptr);
 
+void GenMedianImgByNthElement(long ntime,
+                              const double* const* const debias_img_arr,
+                              const MifImgInfo* const img_info,
+                              double** const median_img_arr_ptr);
+
+double GetMedianByNthElement(long narr,
+                             const double* const val_arr);
+
 void GenImgAboveThArr(long ntime,
                       const double* const* const data_img_arr,
                       const double* const* const std_img_arr,
