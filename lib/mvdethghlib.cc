@@ -616,3 +616,37 @@ void GenDetImg(const HistDataNerr2d* const* const hd2d_arr,
     *hd2d_img_ptr = hd2d_img;
 }
 
+void GenDetImg(const HistDataNerr2d* const* const hd2d_arr,
+               const double* const time_arr, long ntime,
+               double vel, double psi,
+               HistDataNerr2d** const hd2d_img_ptr)
+{
+    long itime0 = 0;
+    double zval0  = time_arr[itime0];
+    HistDataNerr2d* hd2d_img = new HistDataNerr2d;
+    hd2d_img->Init(hd2d_arr[itime0]->GetHi2d());
+    for(long itime = 0; itime < ntime; itime ++){
+        double zval = time_arr[itime];
+        double delta_zval = zval - zval0;
+        double xval_shift = vel * delta_zval * sin(psi);
+        double yval_shift = - vel * delta_zval * cos(psi);
+        for(long ibin = 0; ibin < hd2d_img->GetNbin(); ibin ++){
+            double xval_bin = hd2d_img->GetHi2d()->GetBinCenterXFromIbin(ibin);
+            double yval_bin = hd2d_img->GetHi2d()->GetBinCenterYFromIbin(ibin);
+            double xval_bin_new = xval_bin + xval_shift;
+            double yval_bin_new = yval_bin + yval_shift;
+            double oval = 0.0;
+            if(xval_bin_new < hd2d_arr[itime]->GetXvalLo() ||
+               hd2d_arr[itime]->GetXvalUp() < xval_bin_new ||
+               yval_bin_new < hd2d_arr[itime]->GetYvalLo() ||
+               hd2d_arr[itime]->GetYvalUp() < yval_bin_new  ){
+                oval = 0.0;
+            } else {
+                oval = hd2d_arr[itime]->GetOvalElmAtXY(xval_bin_new, yval_bin_new);
+            }
+            hd2d_img->Fill(xval_bin, yval_bin, oval);
+        }
+    }
+    *hd2d_img_ptr = hd2d_img;
+}
+

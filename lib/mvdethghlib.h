@@ -102,4 +102,9 @@ void GenDetImg(const HistDataNerr2d* const* const hd2d_arr,
                double theta, double rho, double phi, double psi,
                HistDataNerr2d** const hd2d_img_ptr);
 
+void GenDetImg(const HistDataNerr2d* const* const hd2d_arr,
+               const double* const time_arr, long ntime,
+               double vel, double psi,
+               HistDataNerr2d** const hd2d_img_ptr);
+
 #endif // MORIIISM_MVDETHGH_LIB_MVDETHGHLIB_H_
