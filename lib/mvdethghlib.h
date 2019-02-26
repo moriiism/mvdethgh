@@ -19,6 +19,18 @@ void LoadData(string data_list,
               MifImgInfo** const img_info_ptr,
               int* const bitpix_ptr);
 
+void LoadDataXYT(string data_list,
+                 long* const ntime_ptr,
+                 double** const time_arr_ptr,
+                 long** const npos_arr_ptr,
+                 double*** const xpos_arr_ptr,
+                 double*** const ypos_arr_ptr,
+                 double* const xpos_lo_ptr,
+                 double* const xpos_up_ptr,
+                 double* const ypos_lo_ptr,
+                 double* const ypos_up_ptr,
+                 double* const rho_up_ptr);
+
 void GenStdImgArr(long ntime,
                   const double* const* const data_img_arr,
                   const MifImgInfo* const img_info,
@@ -89,6 +101,12 @@ void LoadHi1dVel(string vel_dat,
 
 void LoadHi1dPar(string res_dat,
                  const MifImgInfo* const img_info,
+                 HistInfo1d* const hi1d_rho,
+                 HistInfo1d* const hi1d_phi,
+                 HistInfo1d* const hi1d_psi);
+
+void LoadHi1dPar(string res_dat,
+                 double rho_up,
                  HistInfo1d* const hi1d_rho,
                  HistInfo1d* const hi1d_phi,
                  HistInfo1d* const hi1d_psi);

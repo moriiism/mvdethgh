@@ -101,6 +101,155 @@ void LoadData(string data_list,
     *bitpix_ptr = bitpix;
 }
 
+
+void LoadDataXYT(string data_list,
+                 long* const ntime_ptr,
+                 double** const time_arr_ptr,
+                 long** const npos_arr_ptr,
+                 double*** const xpos_arr_ptr,
+                 double*** const ypos_arr_ptr,
+                 double* const xpos_lo_ptr,
+                 double* const xpos_up_ptr,
+                 double* const ypos_lo_ptr,
+                 double* const ypos_up_ptr,
+                 double* const rho_up_ptr)
+{
+    string* line_arr = NULL;
+    long nline = 0;
+    MiIolib::GenReadFileSkipComment(data_list, &line_arr, &nline);
+    printf("nline = %ld\n", nline);
+    string* xytfile_arr = new string[nline];
+    for(long iline = 0; iline < nline; iline ++){
+        int nsplit = 0;
+        string* split_arr = NULL;
+        MiStr::GenSplit(line_arr[iline], &nsplit, &split_arr);
+        if(1 != nsplit){
+            printf("Bad data_list(=%s): nsplit(%d) != 1 @ iline(%ld).\n",
+                   data_list.c_str(), nsplit, iline);
+            abort();
+        }
+        xytfile_arr[iline] = split_arr[0];
+        MiStr::DelSplit(split_arr);
+    }
+    delete [] line_arr;
+    for(long iline = 0; iline < nline; iline ++){
+        printf("%s\n", xytfile_arr[iline].c_str());
+    }
+
+    long ntime = nline;
+    double* mjd_arr = new double [ntime];
+    for(int itime = 0; itime < ntime; itime ++){
+        string buf;
+        ifstream ifs(xytfile_arr[itime].c_str());
+        getline(ifs, buf);
+        ifs.close();
+        int nsplit = 0;
+        string* split_arr = NULL;
+        MiStr::GenSplit(buf, &nsplit, &split_arr);
+        mjd_arr[itime] = atof(split_arr[0].c_str());
+        MiStr::DelSplit(split_arr);
+    }
+
+    double mjd_min = MirMath::GetMin(ntime, mjd_arr);
+    double mjd_max = MirMath::GetMax(ntime, mjd_arr);
+    double mjd_mid = (mjd_max + mjd_min) / 2.0;
+    double* time_arr = new double[ntime];
+    for(long itime = 0; itime < ntime; itime ++){
+        time_arr[itime] = mjd_arr[itime] - mjd_mid;
+    }
+    double time_min = MirMath::GetMin(ntime, time_arr);
+    double time_max = MirMath::GetMax(ntime, time_arr);
+
+    double xpos_min = 1.0e10;
+    double xpos_max = -1.0e10;
+    double ypos_min = 1.0e10;
+    double ypos_max = -1.0e10;
+    double rho_min  = 1.0e10;
+    double rho_max  = -1.0e10;
+    long* npos_arr    = new long[ntime];
+    double** xpos_arr = new double* [ntime];
+    double** ypos_arr = new double* [ntime];
+    double** rho_arr  = new double* [ntime];
+    for(int itime = 0; itime < ntime; itime ++){
+        string* lines_arr = NULL;
+        long nline = 0;
+        MiIolib::GenReadFileSkipComment(xytfile_arr[itime],
+                                        &lines_arr, &nline);
+        npos_arr[itime] = nline;
+        xpos_arr[itime] = new double[nline];
+        ypos_arr[itime] = new double[nline];
+        rho_arr[itime]  = new double[nline];
+        for(long iline = 0; iline < nline; iline ++){
+            int nsplit = 0;
+            string* split_arr = NULL;
+            MiStr::GenSplit(lines_arr[iline], &nsplit, &split_arr);
+            if(3 != nsplit){
+                abort();
+            }
+            xpos_arr[itime][iline] = atof(split_arr[1].c_str());
+            ypos_arr[itime][iline] = atof(split_arr[2].c_str());
+            MiStr::DelSplit(split_arr);
+            rho_arr[itime][iline] = sqrt(pow(xpos_arr[itime][iline], 2)
+                                  + pow(ypos_arr[itime][iline], 2));
+            if(xpos_arr[itime][iline] < xpos_min){
+                xpos_min = xpos_arr[itime][iline];
+            }
+            if(xpos_arr[itime][iline] > xpos_max){
+                xpos_max = xpos_arr[itime][iline];
+            }
+            if(ypos_arr[itime][iline] < ypos_min){
+                ypos_min = ypos_arr[itime][iline];
+            }
+            if(ypos_arr[itime][iline] > ypos_max){
+                ypos_max = ypos_arr[itime][iline];
+            }
+            if(rho_arr[itime][iline] < rho_min){
+                rho_min = rho_arr[itime][iline];
+            }
+            if(rho_arr[itime][iline] > rho_max){
+                rho_max = rho_arr[itime][iline];
+            }
+        }
+    }
+
+    printf("(mjd_min, mjd_max)   = (%e, %e)\n", mjd_min, mjd_max);
+    printf("(time_min, time_max) = (%e, %e)\n", time_min, time_max);
+    printf("(xpos_min, xpos_max) = (%e, %e)\n", xpos_min, xpos_max);
+    printf("(ypos_min, ypos_max) = (%e, %e)\n", ypos_min, ypos_max);
+    printf("(rho_min, rho_max)   = (%e, %e)\n", rho_min, rho_max);
+
+    double time_lo = 0.0;
+    double time_up = 0.0;
+    double xpos_lo = 0.0;
+    double xpos_up = 0.0;
+    double ypos_lo = 0.0;
+    double ypos_up = 0.0;
+    double rho_lo  = 0.0;
+    double rho_up  = 0.0;
+    double margin_ratio = 0.01;
+    MirMathUtil::GetMarginLoUp(time_min, time_max, margin_ratio,
+                               &time_lo, &time_up);
+    MirMathUtil::GetMarginLoUp(xpos_min, xpos_max, margin_ratio,
+                               &xpos_lo, &xpos_up);
+    MirMathUtil::GetMarginLoUp(ypos_min, ypos_max, margin_ratio,
+                               &ypos_lo, &ypos_up);
+    MirMathUtil::GetMarginLoUp(rho_min, rho_max, margin_ratio,
+                               &rho_lo, &rho_up);
+
+    *ntime_ptr = ntime;
+    *time_arr_ptr = time_arr;
+    *npos_arr_ptr = npos_arr;
+    *xpos_arr_ptr = xpos_arr;
+    *ypos_arr_ptr = ypos_arr;
+    *xpos_lo_ptr = xpos_lo;
+    *xpos_up_ptr = xpos_up;
+    *ypos_lo_ptr = ypos_lo;
+    *ypos_up_ptr = ypos_up;
+    *rho_up_ptr  = rho_up;
+}
+
+
+
 void GenStdImgArr(long ntime,
                   const double* const* const data_img_arr,
                   const MifImgInfo* const img_info,
@@ -535,6 +684,40 @@ void LoadHi1dPar(string res_dat,
     double rho_lo = 0.0;
     double rho_up = sqrt( pow(img_info->GetNaxesArrElm(0), 2)
                           + pow(img_info->GetNaxesArrElm(1), 2) );
+    double phi_lo = 0.0;
+    double phi_up = 2 * M_PI;
+    double psi_lo = 0.0;
+    double psi_up = 2 * M_PI;
+
+    hi1d_rho->InitSetByNbin(rho_lo, rho_up, nbin_rho);
+    hi1d_phi->InitSetByNbin(phi_lo, phi_up, nbin_phi);
+    hi1d_psi->InitSetByNbin(psi_lo, psi_up, nbin_psi);
+}
+
+
+void LoadHi1dPar(string res_dat,
+                 double rho_up,
+                 HistInfo1d* const hi1d_rho,
+                 HistInfo1d* const hi1d_phi,
+                 HistInfo1d* const hi1d_psi)
+{
+    printf("--- read res_dat ---\n");
+    string* line_arr = NULL;
+    long nline = 0;
+    MiIolib::GenReadFileSkipComment(res_dat, &line_arr, &nline);
+    if(1 != nline){
+        printf("nline(%ld) != 1, then abort.", nline);
+        abort();
+    }
+    long nbin_rho = 0;
+    long nbin_phi = 0;
+    long nbin_psi = 0;
+    sscanf(line_arr[0].c_str(), "%ld  %ld  %ld",
+           &nbin_rho, &nbin_phi, &nbin_psi);
+    delete [] line_arr;
+    printf("=== read res_dat ===\n");    
+    
+    double rho_lo = 0.0;
     double phi_lo = 0.0;
     double phi_up = 2 * M_PI;
     double psi_lo = 0.0;
